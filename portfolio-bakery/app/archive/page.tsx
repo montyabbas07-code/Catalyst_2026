@@ -133,7 +133,7 @@ export default function ArchivePage() {
 				<div className="mb-4 flex items-center gap-2">
 					<UserRoundX className="size-4 text-warning" aria-hidden />
 					<h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-						No current owner
+						Limbo
 					</h2>
 				</div>
 				<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
