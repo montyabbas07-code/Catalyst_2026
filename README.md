@@ -51,3 +51,4 @@ Your browser will open automatically at `http://localhost:8501`.
 * **Frontend / UI:** [Streamlit](https://streamlit.io/)
 * **AI Engine:** Google Gemini API (`google-genai`)
 * **Data Processing:** Pandas
+Edgarians 
