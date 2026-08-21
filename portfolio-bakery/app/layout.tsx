@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Inter, Source_Serif_4 } from 'next/font/google'
 import { PortfolioProvider } from '@/components/portfolio-store'
+import { ConsoleProvider } from '@/components/console-provider'
 import './globals.css'
 
 const inter = Inter({
@@ -36,7 +37,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${sourceSerif.variable} bg-background`}>
       <body className="font-sans antialiased">
-        <PortfolioProvider>{children}</PortfolioProvider>
+        <ConsoleProvider>
+          <PortfolioProvider>{children}</PortfolioProvider>
+        </ConsoleProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

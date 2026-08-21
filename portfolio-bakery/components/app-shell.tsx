@@ -12,6 +12,7 @@ const nav = [
   { href: '/handover', label: 'Handover Queue' },
   { href: '/team', label: 'Team' },
   { href: '/archive', label: 'Archive' },
+  { href: '/console/login', label: '⚙️ Console' },
 ]
 
 function NavLinks({ pathname }: { pathname: string }) {
