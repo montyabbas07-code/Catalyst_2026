@@ -11,6 +11,7 @@ const nav = [
   { href: '/', label: 'Portfolio' },
   { href: '/handover', label: 'Handover Queue' },
   { href: '/team', label: 'Team' },
+  { href: '/archive', label: 'Archive' },
 ]
 
 function NavLinks({ pathname }: { pathname: string }) {
