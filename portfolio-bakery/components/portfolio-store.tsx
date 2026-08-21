@@ -39,7 +39,7 @@ export type TeamMember = {
   initials: string
   availability: 'active' | 'transferred' | 'available'
   active: string[]
-  sousChefFor: string[]
+  backups: string[]
 }
 
 function missingCount(p: Project) {
@@ -326,11 +326,11 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       prev.map((p) =>
         p.id === projectId
           ? {
-              ...p,
-              fields: p.fields.map((f) =>
-                f.key === fieldKey ? { ...f, peerComment: comment } : f,
-              ),
-            }
+            ...p,
+            fields: p.fields.map((f) =>
+              f.key === fieldKey ? { ...f, peerComment: comment } : f,
+            ),
+          }
           : p,
       ),
     )
@@ -345,7 +345,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         initials: 'AC',
         availability: 'transferred',
         active: projects.filter((p) => p.owner === 'Alex Chen').map((p) => p.name),
-        sousChefFor: projects.filter((p) => p.sousChef === 'Alex Chen').map((p) => p.name),
+        backups: projects.filter((p) => p.sousChef === 'Alex Chen').map((p) => p.name),
       },
       {
         id: 'sarah',
@@ -354,7 +354,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         initials: 'SP',
         availability: 'available',
         active: projects.filter((p) => p.owner === 'Sarah Patel').map((p) => p.name),
-        sousChefFor: projects.filter((p) => p.sousChef === 'Sarah Patel').map((p) => p.name),
+        backups: projects.filter((p) => p.sousChef === 'Sarah Patel').map((p) => p.name),
       },
       {
         id: 'daniel',
@@ -363,7 +363,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         initials: 'DK',
         availability: 'active',
         active: projects.filter((p) => p.owner === 'Daniel Kim').map((p) => p.name),
-        sousChefFor: projects.filter((p) => p.sousChef === 'Daniel Kim').map((p) => p.name),
+        backups: projects.filter((p) => p.sousChef === 'Daniel Kim').map((p) => p.name),
       },
     ],
     [projects],
