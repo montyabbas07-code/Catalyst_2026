@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Home, Plus, Trash2, Users, FolderPlus, Handshake } from 'lucide-react'
 import { useConsole } from '@/components/console-provider'
+import { usePortfolio } from '@/components/portfolio-store'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +29,7 @@ export default function ManagerConsolePage() {
     createHandover,
     completeHandover,
   } = useConsole()
+  const { takeOwnership } = usePortfolio()
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'sous-chefs' | 'team' | 'manage-projects' | 'handover'>(
     'dashboard'
@@ -45,13 +47,13 @@ export default function ManagerConsolePage() {
 
   useEffect(() => {
     if (!isLoggedIn || userRole !== 'manager') {
-      router.push('/console/login')
+      router.push('/login')
     }
   }, [isLoggedIn, userRole, router])
 
   const handleLogout = () => {
     logout()
-    router.push('/console/login')
+    router.push('/login')
   }
 
   const handleAssignSousChef = (e: React.FormEvent) => {
@@ -700,7 +702,11 @@ export default function ManagerConsolePage() {
                           </div>
                           {handover.status === 'pending' && (
                             <button
-                              onClick={() => completeHandover(handover.id)}
+                              onClick={() => {
+                                const toName = getEmployeeName(handover.toEmployeeId)
+                                completeHandover(handover.id)
+                                takeOwnership(handover.projectId, toName)
+                              }}
                               className={cn(
                                 buttonVariants({ variant: 'default', size: 'sm' })
                               )}

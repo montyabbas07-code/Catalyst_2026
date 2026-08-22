@@ -15,6 +15,7 @@ import { AppShell } from '@/components/app-shell'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button'
 import { usePortfolio, type Project, type TeamMember } from '@/components/portfolio-store'
+import { useConsole } from '@/components/console-provider'
 import { cn } from '@/lib/utils'
 
 function QueueCard({
@@ -138,6 +139,7 @@ function ConfirmModal({
   onOwnerChange,
   onCancel,
   onConfirm,
+  lockedOwner,
 }: {
   project: Project
   team: TeamMember[]
@@ -145,6 +147,7 @@ function ConfirmModal({
   onOwnerChange: (owner: string) => void
   onCancel: () => void
   onConfirm: () => void
+  lockedOwner?: string | null
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -189,23 +192,31 @@ function ConfirmModal({
           research. The recipe — code, data, assumptions, notes and limitations — stays attached
           to the strategy.
         </p>
-        <label className="mt-5 block text-sm font-medium text-foreground" htmlFor="new-owner">
-          New owner
-        </label>
-        <select
-          id="new-owner"
-          value={owner}
-          onChange={(e) => onOwnerChange(e.target.value)}
-          className="mt-2 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          {team
-            .filter((member) => member.availability !== 'transferred')
-            .map((member) => (
-              <option key={member.id} value={member.name}>
-                {member.name} · {member.role}
-              </option>
-            ))}
-        </select>
+        {lockedOwner ? (
+          <p className="mt-5 rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm text-foreground">
+            New owner: <span className="font-medium">{lockedOwner}</span>
+          </p>
+        ) : (
+          <>
+            <label className="mt-5 block text-sm font-medium text-foreground" htmlFor="new-owner">
+              New owner
+            </label>
+            <select
+              id="new-owner"
+              value={owner}
+              onChange={(e) => onOwnerChange(e.target.value)}
+              className="mt-2 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              {team
+                .filter((member) => member.availability !== 'transferred')
+                .map((member) => (
+                  <option key={member.id} value={member.name}>
+                    {member.name} · {member.role}
+                  </option>
+                ))}
+            </select>
+          </>
+        )}
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="outline" className="h-10 px-4" onClick={onCancel}>
             Cancel
@@ -222,9 +233,14 @@ function ConfirmModal({
 
 export default function HandoverQueuePage() {
   const { projects, takeOwnership, team } = usePortfolio()
+  const { userRole, displayName, employees, transferProjectOwnership, logCompletedHandover } =
+    useConsole()
   const [pending, setPending] = useState<Project | null>(null)
   const assignableMembers = team.filter((member) => member.availability !== 'transferred')
-  const [newOwner, setNewOwner] = useState(assignableMembers[0]?.name ?? '')
+  const lockedOwner = userRole === 'employee' ? displayName : null
+  const [newOwner, setNewOwner] = useState(
+    lockedOwner ?? assignableMembers[0]?.name ?? '',
+  )
 
   const alexProjects = projects.filter(
     (p) => p.owner === 'Alex Chen' || p.handedOver,
@@ -272,10 +288,19 @@ export default function HandoverQueuePage() {
           project={pending}
           team={team}
           owner={newOwner}
+          lockedOwner={lockedOwner}
           onOwnerChange={setNewOwner}
           onCancel={() => setPending(null)}
           onConfirm={() => {
-            takeOwnership(pending.id, newOwner)
+            const ownerName = lockedOwner ?? newOwner
+            const fromId =
+              employees.find((e) => e.name === pending.owner)?.id ?? 'alex'
+            const toId = employees.find((e) => e.name === ownerName)?.id
+            takeOwnership(pending.id, ownerName)
+            transferProjectOwnership(pending.id, ownerName)
+            if (toId) {
+              logCompletedHandover(fromId, toId, pending.id)
+            }
             setPending(null)
           }}
         />

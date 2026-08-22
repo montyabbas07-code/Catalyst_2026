@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Source_Serif_4 } from 'next/font/google'
 import { PortfolioProvider } from '@/components/portfolio-store'
 import { ConsoleProvider } from '@/components/console-provider'
+import { AuthGate } from '@/components/auth-gate'
 import './globals.css'
 
 const inter = Inter({
@@ -38,7 +39,9 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${sourceSerif.variable} bg-background`}>
       <body className="font-sans antialiased">
         <ConsoleProvider>
-          <PortfolioProvider>{children}</PortfolioProvider>
+          <PortfolioProvider>
+            <AuthGate>{children}</AuthGate>
+          </PortfolioProvider>
         </ConsoleProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

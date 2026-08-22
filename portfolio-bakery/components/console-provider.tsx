@@ -4,7 +4,12 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 
 // Hardcoded credentials for testing
 const MANAGER_CREDS = { username: 'manager', password: 'manager123' }
-const EMPLOYEE_CREDS = { username: 'employee', password: 'employee123' }
+const SARAH_CREDS = {
+  username: 'sarah',
+  password: 'sarah123',
+  employeeId: 'sarah',
+  displayName: 'Sarah Patel',
+}
 
 export type UserRole = 'manager' | 'employee' | null
 
@@ -37,6 +42,8 @@ export type ConsoleContextType = {
   isLoggedIn: boolean
   userRole: UserRole
   username: string | null
+  displayName: string | null
+  employeeId: string | null
   login: (username: string, password: string) => boolean
   logout: () => void
 
@@ -60,6 +67,8 @@ export type ConsoleContextType = {
   // Manager actions - Handover
   createHandover: (fromEmployeeId: string, toEmployeeId: string, projectId: string) => void
   completeHandover: (handoverId: string) => void
+  transferProjectOwnership: (projectId: string, newOwnerName: string) => void
+  logCompletedHandover: (fromEmployeeId: string, toEmployeeId: string, projectId: string) => void
 }
 
 const ConsoleContext = createContext<ConsoleContextType | undefined>(undefined)
@@ -68,6 +77,8 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userRole, setUserRole] = useState<UserRole>(null)
   const [username, setUsername] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState<string | null>(null)
+  const [employeeId, setEmployeeId] = useState<string | null>(null)
 
   // Real data from portfolio-bakery
   const [employees, setEmployees] = useState<Employee[]>([
@@ -117,14 +128,18 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
       setIsLoggedIn(true)
       setUserRole('manager')
       setUsername(inputUsername)
+      setDisplayName('Manager')
+      setEmployeeId(null)
       return true
     } else if (
-      inputUsername === EMPLOYEE_CREDS.username &&
-      password === EMPLOYEE_CREDS.password
+      inputUsername === SARAH_CREDS.username &&
+      password === SARAH_CREDS.password
     ) {
       setIsLoggedIn(true)
       setUserRole('employee')
       setUsername(inputUsername)
+      setDisplayName(SARAH_CREDS.displayName)
+      setEmployeeId(SARAH_CREDS.employeeId)
       return true
     }
     return false
@@ -134,6 +149,8 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(false)
     setUserRole(null)
     setUsername(null)
+    setDisplayName(null)
+    setEmployeeId(null)
   }
 
   const updateSousChef = (projectId: string, sousChefId: string | null) => {
@@ -290,11 +307,11 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
     const handover = handoverQueue.find((h) => h.id === handoverId)
     if (!handover) return
 
-    // Update current project assignment
-    removeFromProject(handover.fromEmployeeId, handover.projectId)
-    assignToProject(handover.toEmployeeId, handover.projectId)
+    const toEmployee = employees.find((e) => e.id === handover.toEmployeeId)
+    if (toEmployee) {
+      transferProjectOwnership(handover.projectId, toEmployee.name)
+    }
 
-    // Update handover status
     setHandoverQueue((prev) =>
       prev.map((h) =>
         h.id === handoverId
@@ -302,6 +319,62 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
           : h
       )
     )
+  }
+
+  const transferProjectOwnership = (projectId: string, newOwnerName: string) => {
+    const newOwner = employees.find((e) => e.name === newOwnerName)
+    const previousOwnerName = projects.find((p) => p.id === projectId)?.owner
+    const previousOwner = employees.find((e) => e.name === previousOwnerName)
+
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              owner: newOwnerName,
+              sous_chef: p.sous_chef === newOwnerName ? null : p.sous_chef,
+              teamMembers: newOwner
+                ? p.teamMembers.filter((id) => id !== newOwner.id)
+                : p.teamMembers,
+            }
+          : p,
+      ),
+    )
+
+    setEmployees((prev) =>
+      prev.map((e) => {
+        if (previousOwner && e.id === previousOwner.id) {
+          return { ...e, projects: e.projects.filter((id) => id !== projectId) }
+        }
+        if (newOwner && e.id === newOwner.id) {
+          return {
+            ...e,
+            projects: e.projects.includes(projectId)
+              ? e.projects
+              : [...e.projects, projectId],
+          }
+        }
+        return e
+      }),
+    )
+  }
+
+  const logCompletedHandover = (
+    fromEmployeeId: string,
+    toEmployeeId: string,
+    projectId: string,
+  ) => {
+    setHandoverQueue((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        fromEmployeeId,
+        toEmployeeId,
+        projectId,
+        status: 'completed',
+        createdAt: new Date(),
+      },
+    ])
   }
 
   const canBeSousChef = (personName: string, projectId: string): boolean => {
@@ -317,6 +390,8 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
         isLoggedIn,
         userRole,
         username,
+        displayName,
+        employeeId,
         login,
         logout,
         projects,
@@ -332,6 +407,8 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
         removeFromProject,
         createHandover,
         completeHandover,
+        transferProjectOwnership,
+        logCompletedHandover,
       }}
     >
       {children}

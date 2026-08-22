@@ -1,31 +1,40 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Info } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Info, LogOut } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { cn } from '@/lib/utils'
 import { usePortfolio } from '@/components/portfolio-store'
+import { useConsole } from '@/components/console-provider'
+import { buttonVariants } from '@/components/ui/button'
 
 const nav = [
   { href: '/', label: 'Portfolio' },
   { href: '/handover', label: 'Handover Queue' },
   { href: '/team', label: 'Team' },
   { href: '/archive', label: 'Archive' },
-  { href: '/console/login', label: '⚙️ Console' },
+  { href: '/console/manager', label: '⚙️ Console', managerOnly: true },
 ]
 
 function NavLinks({ pathname }: { pathname: string }) {
   const { projects } = usePortfolio()
+  const { userRole } = useConsole()
   const queueCount = projects.filter(
     (p) => p.owner === 'Alex Chen' && !p.handedOver,
   ).length
 
+  const items = nav.filter((item) => !item.managerOnly || userRole === 'manager')
+
   return (
     <>
-      {nav.map((item) => {
+      {items.map((item) => {
         const active =
-          item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
+          item.href === '/'
+            ? pathname === '/'
+            : item.href.startsWith('/console')
+              ? pathname.startsWith('/console')
+              : pathname.startsWith(item.href)
         return (
           <Link
             key={item.href}
@@ -52,6 +61,13 @@ function NavLinks({ pathname }: { pathname: string }) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { displayName, logout } = useConsole()
+
+  const handleLogout = () => {
+    logout()
+    router.replace('/login')
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -59,9 +75,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between md:gap-6">
           <div className="flex items-center justify-between gap-4">
             <Logo />
+            {displayName && (
+              <p className="text-xs text-muted-foreground md:hidden">
+                Signed in as <span className="font-medium text-foreground">{displayName}</span>
+              </p>
+            )}
           </div>
           <nav className="flex items-center gap-1 overflow-x-auto">
             <NavLinks pathname={pathname} />
+            {displayName && (
+              <p className="ml-2 hidden shrink-0 text-xs text-muted-foreground md:block">
+                {displayName}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className={cn(
+                buttonVariants({ variant: 'outline' }),
+                'ml-2 h-9 shrink-0 gap-1.5 px-3 text-xs',
+              )}
+            >
+              <LogOut className="size-3.5" />
+              Logout
+            </button>
           </nav>
         </div>
         <div className="border-t border-border/60 bg-gold/10">
