@@ -5,6 +5,7 @@ By Byte Sized Edgarians,  Team of Three Unimelb First Years.
 ## Site URL
 
 https://catalyst-2026-7k28.vercel.app/handover
+Enter manager username and password for functions
 
 ## 
 
