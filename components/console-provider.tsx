@@ -91,6 +91,7 @@ export type ConsoleContextType = {
   scheduleMeeting: (meeting: Omit<Meeting, 'id' | 'status'>) => void
   completeMeeting: (meetingId: string) => void
   addMeetingRecording: (meetingId: string, recordingUrl: string) => void
+  askQuestion: (projectId: string, question: string) => void
 
   // Manager actions - Projects
   createProject: (name: string, ownerId: string) => void
@@ -179,6 +180,7 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
   )
         const [readNotificationIds, setReadNotificationIds] = useState<string[]>([])
         const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>([])
+        const [userQuestions, setUserQuestions] = useState<Notification[]>([])
         const [meetings, setMeetings] = useState<Meeting[]>([
           {
             id: 'meeting-momentum-alpha-1',
@@ -644,10 +646,10 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    return derived.filter(
+    return [...derived, ...userQuestions].filter(
       (notification) => !dismissedNotificationIds.includes(notification.id),
     )
-  }, [dismissedNotificationIds, employees, handoverQueue, meetings, projects])
+  }, [dismissedNotificationIds, employees, handoverQueue, meetings, projects, userQuestions])
 
   const markNotificationRead = (notificationId: string) => {
     setReadNotificationIds((current) =>
@@ -663,6 +665,45 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
     setDismissedNotificationIds((current) =>
       current.includes(notificationId) ? current : [...current, notificationId],
     )
+  }
+
+  const askQuestion = (projectId: string, question: string) => {
+    const trimmed = question.trim()
+    if (!trimmed) return
+    const project = projects.find((item) => item.id === projectId)
+    if (!project) return
+    const timestamp = Date.now()
+    const newNotifications: Notification[] = [
+      {
+        id: `question-${projectId}-${timestamp}-mgr`,
+        audience: 'manager',
+        title: `New question on ${project.name}`,
+        description: trimmed,
+        timestamp: new Date(),
+        severity: 'info',
+        actionLabel: 'View recipe',
+        actionHref: `/recipe/${projectId}`,
+        kind: 'alert',
+      },
+    ]
+    if (project.sous_chef) {
+      const sousChef = employees.find((employee) => employee.name === project.sous_chef)
+      if (sousChef) {
+        newNotifications.push({
+          id: `question-${projectId}-${timestamp}-sous`,
+          audience: 'employee',
+          recipientId: sousChef.id,
+          title: `Question on ${project.name}`,
+          description: trimmed,
+          timestamp: new Date(),
+          severity: 'info',
+          actionLabel: 'View recipe',
+          actionHref: `/recipe/${projectId}`,
+          kind: 'alert',
+        })
+      }
+    }
+    setUserQuestions((current) => [...newNotifications, ...current])
   }
 
   const respondToRecommendation = (handoverId: string, accepted: boolean) => {
@@ -749,6 +790,7 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
         scheduleMeeting,
         completeMeeting,
         addMeetingRecording,
+        askQuestion,
         updateSousChef,
         canBeSousChef,
         createProject,

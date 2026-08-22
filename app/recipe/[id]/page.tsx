@@ -33,25 +33,6 @@ import { useConsole } from '@/components/console-provider'
 import { cn } from '@/lib/utils'
 import { ProjectAccess } from '@/components/project-access'
 
-const recipeFaqs: { q: string; a: string }[] = [
-  {
-    q: 'What is a recipe card?',
-    a: 'A recipe card is the handover document for a strategy. It records the owner, Sous Chef, hypothesis, dataset, parameters, known limitations and readiness so a new owner can run and maintain the algorithm without reverse-engineering the original researcher’s intent.',
-  },
-  {
-    q: 'How do I schedule a handover meeting?',
-    a: 'Open the recipe card and choose “Schedule Meeting” from the Handover Readiness panel. Pick the new owner, a date and a time, then confirm. The previous owner walks the new owner through the algorithm and a recording is attached to the card once the meeting is complete.',
-  },
-  {
-    q: 'Where can I find meeting recordings?',
-    a: 'If a handover meeting has been held, a “Meeting history” section appears on the card with a “View recording” link. Recordings capture the algorithm walkthrough so you can review the context even after ownership has transferred.',
-  },
-  {
-    q: 'What happens when ownership is transferred?',
-    a: 'The new owner becomes the Head Baker and receives a notification. The Sous Chef tips, meeting recordings and field comments stay attached to the card so the handover context is preserved for future owners.',
-  },
-]
-
 function FieldRow({
   field,
   sousChef,
@@ -327,7 +308,7 @@ function ScheduleMeetingModal({
 export default function RecipePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { getProject, addPeerComment, team, requestMissingContext } = usePortfolio()
-  const { meetings, scheduleMeeting } = useConsole()
+  const { meetings, scheduleMeeting, askQuestion } = useConsole()
   const project = getProject(id)
   const [requested, setRequested] = useState(false)
   const [meetingOpen, setMeetingOpen] = useState(false)
@@ -335,8 +316,26 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
   const [scheduledDate, setScheduledDate] = useState<string>('')
   const [scheduledTime, setScheduledTime] = useState<string>('')
   const [meetingNotes, setMeetingNotes] = useState<string>('')
+  const [openFaqs, setOpenFaqs] = useState<number[]>([])
+  const [askOpen, setAskOpen] = useState(false)
+  const [askText, setAskText] = useState('')
+  const [askSent, setAskSent] = useState(false)
 
   if (!project) notFound()
+
+  const toggleFaq = (index: number) => {
+    setOpenFaqs((current) =>
+      current.includes(index) ? current.filter((i) => i !== index) : [...current, index],
+    )
+  }
+
+  const handleAskSubmit = () => {
+    if (!askText.trim()) return
+    askQuestion(project.id, askText.trim())
+    setAskText('')
+    setAskOpen(false)
+    setAskSent(true)
+  }
 
   const assignableMembers = team.filter((member) => member.availability !== 'transferred')
 
@@ -488,16 +487,83 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
                   Frequently asked questions
                 </p>
               </div>
-              <ul className="mt-3 space-y-3">
-                {recipeFaqs.map((faq) => (
-                  <li key={faq.q}>
-                    <p className="text-sm font-medium text-foreground">{faq.q}</p>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground text-pretty">
-                      {faq.a}
-                    </p>
-                  </li>
-                ))}
+              <ul className="mt-3 divide-y divide-border">
+                {(project.faqs ?? []).map((faq, index) => {
+                  const isOpen = openFaqs.includes(index)
+                  return (
+                    <li key={faq.q}>
+                      <button
+                        type="button"
+                        onClick={() => toggleFaq(index)}
+                        aria-expanded={isOpen}
+                        className="flex w-full items-center justify-between gap-3 py-3 text-left"
+                      >
+                        <span className="text-sm font-medium text-foreground">{faq.q}</span>
+                        {isOpen ? (
+                          <ChevronUp className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                        ) : (
+                          <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                        )}
+                      </button>
+                      {isOpen && (
+                        <p className="pb-3 text-sm leading-relaxed text-muted-foreground text-pretty">
+                          {faq.a}
+                        </p>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
+
+              <div className="mt-3 border-t border-border pt-3">
+                {askSent ? (
+                  <p className="text-sm font-medium text-success">
+                    Your question was sent to {project.sousChef ?? 'the manager'}.
+                  </p>
+                ) : askOpen ? (
+                  <div>
+                    <label htmlFor="ask-question" className="block text-sm font-medium text-foreground">
+                      Ask {project.sousChef ?? 'the manager'} a question
+                    </label>
+                    <textarea
+                      id="ask-question"
+                      value={askText}
+                      onChange={(e) => setAskText(e.target.value)}
+                      rows={3}
+                      placeholder="Type your question about this recipe…"
+                      className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    />
+                    <div className="mt-2 flex items-center gap-2">
+                      <Button size="sm" onClick={handleAskSubmit} disabled={!askText.trim()}>
+                        <Send className="size-3.5" aria-hidden />
+                        Send question
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setAskOpen(false)
+                          setAskText('')
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setAskOpen(true)
+                      setAskSent(false)
+                    }}
+                  >
+                    <MessageSquarePlus className="size-3.5" aria-hidden />
+                    Ask your own question
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Field rows */}
