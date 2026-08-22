@@ -1,7 +1,9 @@
 TEAM:Byte Sized Egarians-- Team of Three Unimelb First Years
 
-SITE URL: https://catalyst-2026-7k28.vercel.app/handover
-Portfolio Bakery
+## SITE URL: https://catalyst-2026-7k28.vercel.app/handover
+
+## Portfolio Bakery
+
 ** You kept the model, but did you keep the  recipe??**
  A simple tool that assists mid to big quant trading teams hand over research properly. When a research leaves or moves to a new project, our bakery keeps all the important context(code, data, assumptions and notes on what didnt't work), alongside important elements such as points of contact, link to codebase) attached to the model, essentially as a hubbase to assits quant trading teams.
 
