@@ -23,6 +23,10 @@ export const metadata: Metadata = {
   description:
     'You kept the model. But did you keep the recipe? Portfolio Bakery keeps research context attached to your quant strategies.',
   generator: 'v0.app',
+  icons: {
+    icon: '/portfolio-bakery-favicon-light.png',
+    apple: '/portfolio-bakery-icon-light.png',
+  },
 }
 
 export const viewport: Viewport = {

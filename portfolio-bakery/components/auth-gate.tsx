@@ -20,11 +20,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
 
     if (isLoggedIn && isLoginPath) {
-      router.replace('/')
+      router.replace(userRole === 'employee' ? '/console/employee' : '/')
       return
     }
 
-    if (isLoggedIn && isConsolePath && userRole !== 'manager') {
+    if (
+      isLoggedIn &&
+      isConsolePath &&
+      !pathname.startsWith('/console/employee') &&
+      userRole !== 'manager'
+    ) {
       router.replace('/')
     }
   }, [isLoggedIn, isLoginPath, isConsolePath, userRole, router])
@@ -37,7 +42,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return <LoginForm />
   }
 
-  if (isConsolePath && userRole !== 'manager') {
+  if (
+    isConsolePath &&
+    !pathname.startsWith('/console/employee') &&
+    userRole !== 'manager'
+  ) {
     return null
   }
 

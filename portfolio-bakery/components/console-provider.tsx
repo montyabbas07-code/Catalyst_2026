@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 
 // Hardcoded credentials for testing
 const MANAGER_CREDS = { username: 'manager', password: 'manager123' }
@@ -33,8 +33,25 @@ export type HandoverItem = {
   fromEmployeeId: string
   toEmployeeId: string
   projectId: string
-  status: 'pending' | 'accepted' | 'completed'
+  status: 'pending' | 'accepted' | 'declined' | 'completed'
   createdAt: Date
+}
+
+export type NotificationSeverity = 'info' | 'warning' | 'critical'
+
+export type Notification = {
+  id: string
+  audience: 'manager' | 'employee'
+  recipientId?: string
+  title: string
+  description: string
+  timestamp: Date
+  severity: NotificationSeverity
+  actionLabel?: string
+  actionHref?: string
+  read?: boolean
+  kind?: 'alert' | 'recommendation'
+  relatedHandoverId?: string
 }
 
 export type ConsoleContextType = {
@@ -51,6 +68,11 @@ export type ConsoleContextType = {
   projects: Project[]
   employees: Employee[]
   handoverQueue: HandoverItem[]
+  notifications: Notification[]
+  markNotificationRead: (notificationId: string) => void
+  markAllNotificationsRead: () => void
+  dismissNotification: (notificationId: string) => void
+  respondToRecommendation: (handoverId: string, accepted: boolean) => void
 
   // Manager actions - Projects
   createProject: (name: string, ownerId: string) => void
@@ -134,9 +156,11 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
         toEmployeeId: '',
         projectId: project.id,
         status: 'pending' as const,
-        createdAt: new Date(),
+          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
       })),
   )
+        const [readNotificationIds, setReadNotificationIds] = useState<string[]>([])
+        const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>([])
 
   const login = (inputUsername: string, password: string): boolean => {
     if (
@@ -416,6 +440,152 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
     ])
   }
 
+  const notifications = useMemo(() => {
+    const derived: Notification[] = []
+
+    handoverQueue.forEach((handover) => {
+      if (handover.status !== 'pending') return
+      const project = projects.find((item) => item.id === handover.projectId)
+      if (!project) return
+
+      const ageInDays = Math.floor(
+        (Date.now() - handover.createdAt.getTime()) / (24 * 60 * 60 * 1000),
+      )
+      const recommendation = [...employees]
+        .filter((employee) => employee.name !== project.owner)
+        .sort((left, right) => {
+          const relationshipScore = (employee: Employee) =>
+            employee.name === project.sous_chef
+              ? 0
+              : project.teamMembers.includes(employee.id)
+                ? 1
+                : 2
+          const workloadScore = (employee: Employee) =>
+            projects.filter((item) => item.owner === employee.name).length
+          return (
+            relationshipScore(left) - relationshipScore(right) ||
+            workloadScore(left) - workloadScore(right)
+          )
+        })[0]
+      const escalation = ageInDays >= 7
+        ? {
+            title: `${project.name} is in Limbo`,
+            description: `No handover has been completed after ${ageInDays} days. Assign an owner immediately.`,
+            severity: 'critical' as const,
+          }
+        : ageInDays >= 4
+          ? {
+              title: `${project.name} is nearing Limbo`,
+              description: `This handover has been unattended for ${ageInDays} days.`,
+              severity: 'critical' as const,
+            }
+          : ageInDays >= 2
+            ? {
+                title: `${project.name} is unattended`,
+                description: `This handover has been waiting for ${ageInDays} days.`,
+                severity: 'warning' as const,
+              }
+            : {
+                title: `${project.name} needs a handover`,
+                description: 'Choose a new owner in the Bread Basket.',
+                severity: 'info' as const,
+              }
+
+      derived.push({
+        id: `handover-${handover.id}-${ageInDays}`,
+        audience: 'manager',
+        title: escalation.title,
+        description: escalation.description,
+        timestamp: handover.createdAt,
+        severity: escalation.severity,
+        actionLabel: 'Open Bread Basket',
+        actionHref: '/handover',
+        kind: 'alert',
+      })
+
+      if (!handover.toEmployeeId && recommendation) {
+        derived.push({
+          id: `recommendation-manager-${handover.id}`,
+          audience: 'manager',
+          title: `${recommendation.name} is recommended`,
+          description:
+            recommendation.name === project.sous_chef
+              ? `${recommendation.name} previously supported ${project.name} as its sous-chef.`
+              : `${recommendation.name} has the closest team relationship and current workload for ${project.name}.`,
+          timestamp: handover.createdAt,
+          severity: 'info',
+          actionLabel: 'Review recommendation',
+          actionHref: '/handover',
+          kind: 'recommendation',
+          relatedHandoverId: handover.id,
+        })
+        derived.push({
+          id: `recommendation-employee-${handover.id}`,
+          audience: 'employee',
+          recipientId: recommendation.id,
+          title: `You are recommended for ${project.name}`,
+          description:
+            recommendation.name === project.sous_chef
+              ? 'You previously supported this project as its sous-chef.'
+              : 'You have the closest team relationship and current workload for this project.',
+          timestamp: handover.createdAt,
+          severity: 'info',
+          actionLabel: 'Review project',
+          actionHref: `/recipe/${project.id}`,
+          kind: 'recommendation',
+          relatedHandoverId: handover.id,
+        })
+      }
+    })
+
+    return derived.filter(
+      (notification) => !dismissedNotificationIds.includes(notification.id),
+    )
+  }, [dismissedNotificationIds, employees, handoverQueue, projects])
+
+  const markNotificationRead = (notificationId: string) => {
+    setReadNotificationIds((current) =>
+      current.includes(notificationId) ? current : [...current, notificationId],
+    )
+  }
+
+  const markAllNotificationsRead = () => {
+    setReadNotificationIds(notifications.map((notification) => notification.id))
+  }
+
+  const dismissNotification = (notificationId: string) => {
+    setDismissedNotificationIds((current) =>
+      current.includes(notificationId) ? current : [...current, notificationId],
+    )
+  }
+
+  const respondToRecommendation = (handoverId: string, accepted: boolean) => {
+    const handover = handoverQueue.find((item) => item.id === handoverId)
+    if (!handover || handover.status !== 'pending') return
+
+    const project = projects.find((item) => item.id === handover.projectId)
+    const recommendedEmployee = project
+      ? employees.find((employee) => employee.name === project.sous_chef)
+      : undefined
+    if (!project || !recommendedEmployee) return
+
+    if (accepted) {
+      transferProjectOwnership(project.id, recommendedEmployee.name)
+    }
+
+    setHandoverQueue((current) =>
+      current.map((item) =>
+        item.id === handoverId
+          ? {
+              ...item,
+              toEmployeeId: recommendedEmployee.id,
+              status: accepted ? 'completed' : 'declined',
+            }
+          : item,
+      ),
+    )
+  }
+
   const canBeSousChef = (personName: string, projectId: string): boolean => {
     const project = projects.find((p) => p.id === projectId)
     if (!project) return false
@@ -436,6 +606,14 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
         projects,
         employees,
         handoverQueue,
+        notifications: notifications.map((notification) => ({
+          ...notification,
+          read: readNotificationIds.includes(notification.id),
+        })),
+        markNotificationRead,
+        markAllNotificationsRead,
+        dismissNotification,
+        respondToRecommendation,
         updateSousChef,
         canBeSousChef,
         createProject,

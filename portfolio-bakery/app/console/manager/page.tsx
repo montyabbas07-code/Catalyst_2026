@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { Home, Plus, Trash2, Users, FolderPlus, ChefHat } from 'lucide-react'
 import { useConsole } from '@/components/console-provider'
 import { usePortfolio } from '@/components/portfolio-store'
+import { NotificationCenter } from '@/components/app-shell'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -99,7 +100,32 @@ export default function ManagerConsolePage() {
   const getProjectName = (id: string) => projects.find((p) => p.id === id)?.name || id
   const getRecommendedRecipient = (projectId: string) => {
     const project = projects.find((item) => item.id === projectId)
-    return employees.find((employee) => employee.name === project?.sous_chef)?.id ?? 'sarah'
+    if (!project) return employees.find((employee) => employee.id !== 'alex')?.id ?? ''
+
+    return [...employees]
+      .filter((employee) => employee.name !== project.owner)
+      .sort((left, right) => {
+        const relationshipScore = (employee: typeof left) =>
+          employee.name === project.sous_chef
+            ? 0
+            : project.teamMembers.includes(employee.id)
+              ? 1
+              : 2
+        const workloadScore = (employee: typeof left) =>
+          projects.filter((item) => item.owner === employee.name).length
+        return (
+          relationshipScore(left) - relationshipScore(right) ||
+          workloadScore(left) - workloadScore(right)
+        )
+      })[0]?.id ?? ''
+  }
+  const getHandoverAgeDays = (createdAt: Date) =>
+    Math.floor((Date.now() - createdAt.getTime()) / (24 * 60 * 60 * 1000))
+  const getHandoverStage = (ageInDays: number) => {
+    if (ageInDays >= 7) return 'In Limbo'
+    if (ageInDays >= 4) return 'Nearing Limbo'
+    if (ageInDays >= 2) return 'Unattended'
+    return 'Needs assignment'
   }
 
   return (
@@ -116,6 +142,7 @@ export default function ManagerConsolePage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <NotificationCenter />
             <button
               onClick={() => router.push('/')}
               className={cn(buttonVariants({ variant: 'outline' }))}
@@ -613,6 +640,10 @@ export default function ManagerConsolePage() {
                             </p>
                             <p className="text-xs text-muted-foreground">
                               Project: {getProjectName(handover.projectId)}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Waiting {getHandoverAgeDays(handover.createdAt)} day(s) ·{' '}
+                              {getHandoverStage(getHandoverAgeDays(handover.createdAt))}
                             </p>
                             <p className={cn(
                               'text-xs font-semibold uppercase mt-1',
