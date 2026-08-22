@@ -30,7 +30,7 @@ export function LoginForm() {
           <img
             src="/Logo.png"
             alt="Portfolio Bakery"
-            className="h-14 w-auto"
+            className="h-28 w-auto"
           />
         </div>
 
