@@ -7,11 +7,13 @@ import { Bell, CircleAlert, Info, LogOut, X } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { cn } from '@/lib/utils'
 import { usePortfolio } from '@/components/portfolio-store'
-import { useConsole } from '@/components/console-provider'
+import { useConsole, type Notification } from '@/components/console-provider'
 import { buttonVariants } from '@/components/ui/button'
 
 export function NotificationCenter() {
   const [open, setOpen] = useState(false)
+  const [localReadIds, setLocalReadIds] = useState<string[]>([])
+  const [localDismissedIds, setLocalDismissedIds] = useState<string[]>([])
   const {
     userRole,
     employeeId,
@@ -21,12 +23,45 @@ export function NotificationCenter() {
     dismissNotification,
     respondToRecommendation,
   } = useConsole()
-  const visibleNotifications = notifications.filter(
+  const { projects, contextRequests } = usePortfolio()
+  const contextNotifications: Notification[] = contextRequests.map((request) => {
+    const project = projects.find((item) => item.id === request.projectId)
+    return {
+      id: `context-request-${request.id}`,
+      audience: 'manager' as const,
+      title: `${project?.name ?? 'Project'} needs missing context`,
+      description: `${project?.owner ?? 'The owner'} has been asked to complete missing recipe fields.`,
+      timestamp: request.createdAt,
+      severity: 'warning' as const,
+      actionLabel: 'Review recipe',
+      actionHref: `/recipe/${request.projectId}`,
+    }
+  })
+  const allNotifications = [...notifications, ...contextNotifications]
+  const visibleNotifications = allNotifications.filter(
     (notification) =>
       notification.audience === userRole &&
+      !localDismissedIds.includes(notification.id) &&
       (userRole !== 'employee' || notification.recipientId === employeeId),
   )
-  const unreadCount = visibleNotifications.filter((notification) => !notification.read).length
+  const unreadCount = visibleNotifications.filter(
+    (notification) =>
+      !notification.read && !localReadIds.includes(notification.id),
+  ).length
+  const markRead = (notificationId: string) => {
+    if (notificationId.startsWith('context-request-')) {
+      setLocalReadIds((current) => [...new Set([...current, notificationId])])
+    } else {
+      markNotificationRead(notificationId)
+    }
+  }
+  const dismiss = (notificationId: string) => {
+    if (notificationId.startsWith('context-request-')) {
+      setLocalDismissedIds((current) => [...new Set([...current, notificationId])])
+    } else {
+      dismissNotification(notificationId)
+    }
+  }
 
   return (
     <div className="relative">
@@ -56,7 +91,10 @@ export function NotificationCenter() {
               {unreadCount > 0 && (
                 <button
                   type="button"
-                  onClick={markAllNotificationsRead}
+                  onClick={() => {
+                    markAllNotificationsRead()
+                    setLocalReadIds(visibleNotifications.map((notification) => notification.id))
+                  }}
                   className="text-xs font-medium text-muted-foreground hover:text-foreground"
                 >
                   Mark all read
@@ -81,7 +119,9 @@ export function NotificationCenter() {
                   key={notification.id}
                   className={cn(
                     'rounded-lg border p-3',
-                    notification.read ? 'border-border/60 bg-background' : 'border-warning/40 bg-warning-muted/30',
+                    notification.read || localReadIds.includes(notification.id)
+                      ? 'border-border/60 bg-background'
+                      : 'border-warning/40 bg-warning-muted/30',
                   )}
                 >
                   <div className="flex items-start gap-2">
@@ -93,7 +133,7 @@ export function NotificationCenter() {
                         {notification.actionHref && notification.actionLabel && (
                           <Link
                             href={notification.actionHref}
-                            onClick={() => markNotificationRead(notification.id)}
+                            onClick={() => markRead(notification.id)}
                             className="text-xs font-semibold text-foreground underline-offset-2 hover:underline"
                           >
                             {notification.actionLabel}
@@ -125,10 +165,10 @@ export function NotificationCenter() {
                               </button>
                             </>
                           )}
-                        {!notification.read && (
+                        {!notification.read && !localReadIds.includes(notification.id) && (
                           <button
                             type="button"
-                            onClick={() => markNotificationRead(notification.id)}
+                            onClick={() => markRead(notification.id)}
                             className="text-xs text-muted-foreground hover:text-foreground"
                           >
                             Mark read
@@ -136,7 +176,7 @@ export function NotificationCenter() {
                         )}
                         <button
                           type="button"
-                          onClick={() => dismissNotification(notification.id)}
+                          onClick={() => dismiss(notification.id)}
                           className="text-xs text-muted-foreground hover:text-foreground"
                         >
                           Dismiss

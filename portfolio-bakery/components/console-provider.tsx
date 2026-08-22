@@ -54,6 +54,20 @@ export type Notification = {
   relatedHandoverId?: string
 }
 
+export type MeetingStatus = 'scheduled' | 'completed' | 'recording-available'
+
+export type Meeting = {
+  id: string
+  projectId: string
+  previousOwner: string
+  newOwner: string
+  scheduledDate: string
+  scheduledTime: string
+  notes: string
+  status: MeetingStatus
+  recordingUrl?: string
+}
+
 export type ConsoleContextType = {
   // Auth
   isLoggedIn: boolean
@@ -73,6 +87,10 @@ export type ConsoleContextType = {
   markAllNotificationsRead: () => void
   dismissNotification: (notificationId: string) => void
   respondToRecommendation: (handoverId: string, accepted: boolean) => void
+  meetings: Meeting[]
+  scheduleMeeting: (meeting: Omit<Meeting, 'id' | 'status'>) => void
+  completeMeeting: (meetingId: string) => void
+  addMeetingRecording: (meetingId: string, recordingUrl: string) => void
 
   // Manager actions - Projects
   createProject: (name: string, ownerId: string) => void
@@ -161,6 +179,19 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
   )
         const [readNotificationIds, setReadNotificationIds] = useState<string[]>([])
         const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>([])
+        const [meetings, setMeetings] = useState<Meeting[]>([
+          {
+            id: 'meeting-momentum-alpha-1',
+            projectId: 'momentum-alpha',
+            previousOwner: 'Alex Chen',
+            newOwner: 'Sarah Patel',
+            scheduledDate: '2026-08-20',
+            scheduledTime: '10:00',
+            notes: 'Walk through signal construction, volatility filtering, and known limitations.',
+            status: 'recording-available',
+            recordingUrl: 'https://example.com/recordings/momentum-alpha',
+          },
+        ])
 
   const login = (inputUsername: string, password: string): boolean => {
     if (
@@ -503,6 +534,20 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
         kind: 'alert',
       })
 
+      if (!meetings.some((meeting) => meeting.projectId === project.id)) {
+        derived.push({
+          id: `meeting-missing-${handover.id}`,
+          audience: 'manager',
+          title: `${project.name} has no walkthrough scheduled`,
+          description: 'Schedule time with the previous owner before completing the handover.',
+          timestamp: handover.createdAt,
+          severity: 'warning',
+          actionLabel: 'Schedule meeting',
+          actionHref: '/handover',
+          kind: 'alert',
+        })
+      }
+
       if (!handover.toEmployeeId && recommendation) {
         derived.push({
           id: `recommendation-manager-${handover.id}`,
@@ -538,10 +583,71 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
       }
     })
 
+    meetings.forEach((meeting) => {
+      const project = projects.find((item) => item.id === meeting.projectId)
+      if (!project) return
+
+      if (meeting.status === 'scheduled') {
+        derived.push({
+          id: `meeting-scheduled-${meeting.id}`,
+          audience: 'manager',
+          title: 'Algorithm walkthrough scheduled',
+          description: `${meeting.previousOwner} will explain ${project.name} to ${meeting.newOwner} on ${meeting.scheduledDate} at ${meeting.scheduledTime}.`,
+          timestamp: new Date(`${meeting.scheduledDate}T${meeting.scheduledTime}`),
+          severity: 'info',
+          actionLabel: 'Open Bread Basket',
+          actionHref: '/handover',
+          kind: 'alert',
+        })
+        const meetingTime = new Date(`${meeting.scheduledDate}T${meeting.scheduledTime}`).getTime()
+        if (meetingTime - Date.now() <= 24 * 60 * 60 * 1000 && meetingTime >= Date.now()) {
+          derived.push({
+            id: `meeting-reminder-${meeting.id}`,
+            audience: 'manager',
+            title: `Walkthrough reminder: ${project.name}`,
+            description: `${meeting.previousOwner} and ${meeting.newOwner} meet on ${meeting.scheduledDate} at ${meeting.scheduledTime}.`,
+            timestamp: new Date(meetingTime),
+            severity: 'warning',
+            actionLabel: 'Open Bread Basket',
+            actionHref: '/handover',
+            kind: 'alert',
+          })
+        }
+      }
+
+      if (meeting.status === 'completed' || meeting.status === 'recording-available') {
+        derived.push({
+          id: `meeting-completed-${meeting.id}`,
+          audience: 'manager',
+          title: 'Algorithm walkthrough completed',
+          description: `${meeting.previousOwner} completed the ${project.name} explanation.`,
+          timestamp: new Date(`${meeting.scheduledDate}T${meeting.scheduledTime}`),
+          severity: 'info',
+          actionLabel: 'View project',
+          actionHref: `/recipe/${project.id}`,
+          kind: 'alert',
+        })
+      }
+
+      if (meeting.status === 'recording-available' && meeting.recordingUrl) {
+        derived.push({
+          id: `meeting-recording-${meeting.id}`,
+          audience: 'manager',
+          title: 'Meeting recording available',
+          description: `The ${project.name} walkthrough with ${meeting.previousOwner} is ready to view.`,
+          timestamp: new Date(`${meeting.scheduledDate}T${meeting.scheduledTime}`),
+          severity: 'info',
+          actionLabel: 'View recording',
+          actionHref: meeting.recordingUrl,
+          kind: 'alert',
+        })
+      }
+    })
+
     return derived.filter(
       (notification) => !dismissedNotificationIds.includes(notification.id),
     )
-  }, [dismissedNotificationIds, employees, handoverQueue, projects])
+  }, [dismissedNotificationIds, employees, handoverQueue, meetings, projects])
 
   const markNotificationRead = (notificationId: string) => {
     setReadNotificationIds((current) =>
@@ -586,6 +692,31 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
     )
   }
 
+  const scheduleMeeting = (meeting: Omit<Meeting, 'id' | 'status'>) => {
+    setMeetings((current) => [
+      ...current,
+      { ...meeting, id: `meeting-${Date.now()}`, status: 'scheduled' },
+    ])
+  }
+
+  const completeMeeting = (meetingId: string) => {
+    setMeetings((current) =>
+      current.map((meeting) =>
+        meeting.id === meetingId ? { ...meeting, status: 'completed' } : meeting,
+      ),
+    )
+  }
+
+  const addMeetingRecording = (meetingId: string, recordingUrl: string) => {
+    setMeetings((current) =>
+      current.map((meeting) =>
+        meeting.id === meetingId
+          ? { ...meeting, recordingUrl, status: 'recording-available' }
+          : meeting,
+      ),
+    )
+  }
+
   const canBeSousChef = (personName: string, projectId: string): boolean => {
     const project = projects.find((p) => p.id === projectId)
     if (!project) return false
@@ -614,6 +745,10 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
         markAllNotificationsRead,
         dismissNotification,
         respondToRecommendation,
+        meetings,
+        scheduleMeeting,
+        completeMeeting,
+        addMeetingRecording,
         updateSousChef,
         canBeSousChef,
         createProject,

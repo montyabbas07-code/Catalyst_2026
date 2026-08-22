@@ -45,6 +45,12 @@ export type TeamMember = {
   backups: string[]
 }
 
+export type ContextRequest = {
+  id: string
+  projectId: string
+  createdAt: Date
+}
+
 function missingCount(p: Project) {
   return p.fields.filter((f) => !f.complete).length
 }
@@ -318,6 +324,8 @@ type Ctx = {
   missingCount: (p: Project) => number
   takeOwnership: (id: string, newOwner: string) => void
   addPeerComment: (projectId: string, fieldKey: string, comment: PeerComment) => void
+  contextRequests: ContextRequest[]
+  requestMissingContext: (projectId: string) => void
   team: TeamMember[]
 }
 
@@ -325,6 +333,7 @@ const PortfolioContext = createContext<Ctx | null>(null)
 
 export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>(seedProjects)
+  const [contextRequests, setContextRequests] = useState<ContextRequest[]>([])
 
   const takeOwnership = (id: string, newOwner: string) => {
     setProjects((prev) =>
@@ -346,6 +355,14 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
           }
           : p,
       ),
+    )
+  }
+
+  const requestMissingContext = (projectId: string) => {
+    setContextRequests((current) =>
+      current.some((request) => request.projectId === projectId)
+        ? current
+        : [...current, { id: `context-${Date.now()}`, projectId, createdAt: new Date() }],
     )
   }
 
@@ -392,6 +409,8 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       missingCount,
       takeOwnership,
       addPeerComment,
+      contextRequests,
+      requestMissingContext,
       team,
     }),
     [projects, team],

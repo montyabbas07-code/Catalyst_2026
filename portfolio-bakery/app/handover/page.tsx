@@ -22,12 +22,15 @@ import { ProjectAccess } from '@/components/project-access'
 function QueueCard({
   project,
   onTake,
+  meetings,
 }: {
   project: Project
   onTake: (p: Project) => void
+  meetings: { projectId: string }[]
 }) {
   const preserved = project.fields.filter((f) => f.complete)
   const missing = project.fields.filter((f) => !f.complete)
+  const hasMeeting = meetings.some((meeting) => meeting.projectId === project.id)
 
   if (project.handedOver) {
     return (
@@ -134,6 +137,15 @@ function QueueCard({
           View Recipe
         </Link>
       </div>
+      {hasMeeting && (
+        <Link
+          href={`/recipe/${project.id}`}
+          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:underline"
+        >
+          Meeting available
+          <ArrowRight className="size-4" aria-hidden />
+        </Link>
+      )}
       <ProjectAccess
         codebaseUrl={project.codebaseUrl}
         owner={project.owner}
@@ -160,18 +172,6 @@ function ConfirmModal({
   onConfirm: () => void
   lockedOwner?: string | null
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel()
-    }
-    document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
-    }
-  }, [onCancel])
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -244,8 +244,14 @@ function ConfirmModal({
 
 export default function HandoverQueuePage() {
   const { projects, takeOwnership, team } = usePortfolio()
-  const { userRole, displayName, employees, transferProjectOwnership, logCompletedHandover } =
-    useConsole()
+  const {
+    userRole,
+    displayName,
+    employees,
+    transferProjectOwnership,
+    logCompletedHandover,
+    meetings,
+  } = useConsole()
   const [pending, setPending] = useState<Project | null>(null)
   const assignableMembers = team.filter((member) => member.availability !== 'transferred')
   const lockedOwner = userRole === 'employee' ? displayName : null
@@ -290,7 +296,12 @@ export default function HandoverQueuePage() {
 
       <div className="mt-6 grid auto-rows-fr grid-cols-1 gap-4 lg:grid-cols-2">
         {alexProjects.map((p) => (
-          <QueueCard key={p.id} project={p} onTake={setPending} />
+          <QueueCard
+            key={p.id}
+            project={p}
+            onTake={setPending}
+            meetings={meetings}
+          />
         ))}
       </div>
 

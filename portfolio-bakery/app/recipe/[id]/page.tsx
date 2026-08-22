@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import {
   ArrowLeft,
+  CalendarPlus,
   Check,
   CircleCheck,
   TriangleAlert,
@@ -15,11 +16,18 @@ import {
   ChevronUp,
   ChefHat,
   MessageSquarePlus,
+  Video,
+  X,
 } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
 import { ReadinessBadge, StatusPill } from '@/components/status-badges'
 import { Button } from '@/components/ui/button'
-import { usePortfolio, type RecipeField } from '@/components/portfolio-store'
+import {
+  usePortfolio,
+  type RecipeField,
+  type TeamMember,
+} from '@/components/portfolio-store'
+import { useConsole } from '@/components/console-provider'
 import { cn } from '@/lib/utils'
 import { ProjectAccess } from '@/components/project-access'
 
@@ -163,18 +171,159 @@ function FieldRow({
   )
 }
 
+function ScheduleMeetingModal({
+  projectName,
+  previousOwner,
+  team,
+  newOwner,
+  onOwnerChange,
+  scheduledDate,
+  onDateChange,
+  scheduledTime,
+  onTimeChange,
+  meetingNotes,
+  onNotesChange,
+  onCancel,
+  onConfirm,
+}: {
+  projectName: string
+  previousOwner: string
+  team: TeamMember[]
+  newOwner: string
+  onOwnerChange: (owner: string) => void
+  scheduledDate: string
+  onDateChange: (date: string) => void
+  scheduledTime: string
+  onTimeChange: (time: string) => void
+  meetingNotes: string
+  onNotesChange: (notes: string) => void
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  const canConfirm = Boolean(newOwner && scheduledDate && scheduledTime)
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="schedule-meeting-title"
+    >
+      <div
+        className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+        onClick={onCancel}
+        aria-hidden
+      />
+      <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
+        <button
+          onClick={onCancel}
+          className="absolute right-4 top-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Close"
+        >
+          <X className="size-4" aria-hidden />
+        </button>
+        <span className="flex size-11 items-center justify-center rounded-xl bg-gold/15 text-gold-foreground">
+          <CalendarPlus className="size-5 text-gold" aria-hidden />
+        </span>
+        <h2 id="schedule-meeting-title" className="mt-4 font-serif text-xl font-semibold text-foreground">
+          Schedule handover meeting
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">
+          {previousOwner} will walk the new owner through the algorithm behind {projectName}.
+        </p>
+
+        <label className="mt-5 block text-sm font-medium text-foreground" htmlFor="meeting-owner">
+          New owner
+        </label>
+        <select
+          id="meeting-owner"
+          value={newOwner}
+          onChange={(e) => onOwnerChange(e.target.value)}
+          className="mt-2 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {team.map((member) => (
+            <option key={member.id} value={member.name}>
+              {member.name} · {member.role}
+            </option>
+          ))}
+        </select>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="meeting-date" className="block text-sm font-medium text-foreground">
+              Date
+            </label>
+            <input
+              id="meeting-date"
+              type="date"
+              value={scheduledDate}
+              onChange={(e) => onDateChange(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </div>
+          <div>
+            <label htmlFor="meeting-time" className="block text-sm font-medium text-foreground">
+              Time
+            </label>
+            <input
+              id="meeting-time"
+              type="time"
+              value={scheduledTime}
+              onChange={(e) => onTimeChange(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <label htmlFor="meeting-notes" className="block text-sm font-medium text-foreground">
+            Notes
+          </label>
+          <textarea
+            id="meeting-notes"
+            rows={3}
+            placeholder="What should the walkthrough cover?"
+            value={meetingNotes}
+            onChange={(e) => onNotesChange(e.target.value)}
+            className="mt-1 block w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          />
+        </div>
+
+        <div className="mt-6 flex justify-end gap-2">
+          <Button variant="outline" className="h-10 px-4" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button className="h-10 gap-2 px-4" onClick={onConfirm} disabled={!canConfirm}>
+            <CalendarPlus className="size-4" aria-hidden />
+            Schedule Meeting
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function RecipePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { getProject, addPeerComment } = usePortfolio()
+  const { getProject, addPeerComment, team, requestMissingContext } = usePortfolio()
+  const { meetings, scheduleMeeting } = useConsole()
   const project = getProject(id)
   const [requested, setRequested] = useState(false)
+  const [meetingOpen, setMeetingOpen] = useState(false)
+  const [newOwner, setNewOwner] = useState('')
+  const [scheduledDate, setScheduledDate] = useState<string>('')
+  const [scheduledTime, setScheduledTime] = useState<string>('')
+  const [meetingNotes, setMeetingNotes] = useState<string>('')
 
   if (!project) notFound()
+
+  const assignableMembers = team.filter((member) => member.availability !== 'transferred')
 
   const ready = project.fields.filter((f) => f.complete)
   const missing = project.fields.filter((f) => !f.complete)
   const commit = project.fields.find((f) => f.key === 'code')?.value
   const peerCommentCount = project.fields.filter((f) => f.peerComment).length
+  const projectMeetings = meetings.filter((meeting) => meeting.projectId === project.id)
 
   return (
     <AppShell>
@@ -255,6 +404,37 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
               owner={project.owner}
               ownerEmail={project.ownerEmail}
             />
+
+            {projectMeetings.length > 0 && (
+              <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 p-4">
+                <h2 className="font-serif text-lg font-semibold text-foreground">Meeting history</h2>
+                <div className="mt-3 space-y-3">
+                  {projectMeetings.map((meeting) => (
+                    <div key={meeting.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border/60 bg-card/60 p-3">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          Algorithm walkthrough with {meeting.previousOwner}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {meeting.scheduledDate} at {meeting.scheduledTime} · {meeting.status.replace('-', ' ')}
+                        </p>
+                      </div>
+                      {meeting.recordingUrl && (
+                        <a
+                          href={meeting.recordingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:underline"
+                        >
+                          <Video className="size-4" aria-hidden />
+                          View recording
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Hypothesis */}
             <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 p-4">
@@ -358,7 +538,10 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
               <Button
                 className="h-10 w-full gap-2"
                 variant={requested ? 'secondary' : 'default'}
-                onClick={() => setRequested(true)}
+                onClick={() => {
+                  setRequested(true)
+                  requestMissingContext(project.id)
+                }}
                 disabled={requested}
               >
                 {requested ? (
@@ -373,15 +556,61 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
                   </>
                 )}
               </Button>
+              <Button
+                variant="outline"
+                className="h-10 w-full gap-2"
+                onClick={() => {
+                  if (!newOwner) {
+                    setNewOwner(assignableMembers[0]?.name ?? '')
+                  }
+                  setMeetingOpen(true)
+                }}
+              >
+                <CalendarPlus className="size-4" aria-hidden />
+                Schedule Meeting
+              </Button>
               {requested && (
                 <p className="pt-1 text-center text-xs text-muted-foreground">
                   {project.owner} has been notified to complete the missing fields.
+                </p>
+              )}
+              {scheduledDate && !meetingOpen && (
+                <p className="pt-1 text-center text-xs text-muted-foreground">
+                  Meeting scheduled for {scheduledDate} at {scheduledTime}
                 </p>
               )}
             </div>
           </div>
         </aside>
       </div>
+
+      {meetingOpen && (
+        <ScheduleMeetingModal
+          projectName={project.name}
+          previousOwner={project.owner}
+          team={assignableMembers}
+          newOwner={newOwner}
+          onOwnerChange={setNewOwner}
+          scheduledDate={scheduledDate}
+          onDateChange={setScheduledDate}
+          scheduledTime={scheduledTime}
+          onTimeChange={setScheduledTime}
+          meetingNotes={meetingNotes}
+          onNotesChange={setMeetingNotes}
+          onCancel={() => setMeetingOpen(false)}
+          onConfirm={() => {
+            scheduleMeeting({
+              projectId: project.id,
+              previousOwner: project.owner,
+              newOwner,
+              scheduledDate,
+              scheduledTime,
+              notes: meetingNotes,
+            })
+            setMeetingOpen(false)
+          }}
+        />
+      )}
     </AppShell>
   )
 }
