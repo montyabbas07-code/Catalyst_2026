@@ -26,6 +26,7 @@ After conducting careful research and an important interview with a canva engine
 - **Team:** Team directory showing each researcher's role, availability, contact email, active strategies and backup responsibilities. The goal of this page is to assist team members to identify who owns or supports each model.
 - **Archive:** Historical storage area of past retired models or unowned models that are unable to be successfully handed over situated in Limbo. ALl models include codebase link, research data, description, archive date and more. 
 - **Manager Console:** Manager view for administrative functions including creating projects, assigning new owners, managing employees and monitoring handovers.
+- Notiifications and FAQs to assist with ease of access.
 
 ## Our Assumptions and Interviews
  
