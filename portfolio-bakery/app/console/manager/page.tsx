@@ -148,12 +148,12 @@ export default function ManagerConsolePage() {
           {/* Tabs */}
           <div className="mb-8 flex flex-wrap gap-2 border-b border-border">
             {[
-              { id: 'dashboard', label: '📊 Dashboard' },
-              { id: 'projects', label: '📁 Projects' },
-              { id: 'sous-chefs', label: '👨‍🍳 Sous-Chefs' },
-              { id: 'team', label: '👥 Team' },
-              { id: 'manage-projects', label: '⚙️ Manage Projects' },
-              { id: 'handover', label: '🤝 Handover Queue' },
+              { id: 'dashboard', label: 'Dashboard' },
+              { id: 'projects', label: 'Projects' },
+              { id: 'sous-chefs', label: 'Sous-Chefs' },
+              { id: 'team', label: 'Team' },
+              { id: 'manage-projects', label: 'Manage Projects' },
+              { id: 'handover', label: 'Bread Basket' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -589,7 +589,7 @@ export default function ManagerConsolePage() {
             </div>
           )}
 
-          {/* Handover Queue Tab */}
+          {/* Bread Basket Tab */}
           {activeTab === 'handover' && (
             <div className="space-y-6">
               <div className="rounded-xl border border-border bg-card p-6">
@@ -668,7 +668,7 @@ export default function ManagerConsolePage() {
 
               <div className="rounded-xl border border-border bg-card p-6">
                 <h2 className="font-serif text-lg font-semibold text-foreground">
-                  Handover Queue ({handoverQueue.length})
+                  Bread Basket ({handoverQueue.length})
                 </h2>
 
                 <div className="mt-6 space-y-3">

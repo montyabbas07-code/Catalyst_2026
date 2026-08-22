@@ -74,7 +74,7 @@ export default function DashboardPage() {
                 'h-10 shrink-0 gap-2 px-4',
               )}
             >
-              Open Handover Queue
+              Open Bread Basket
               <ArrowRight className="size-4" aria-hidden />
             </Link>
           </div>

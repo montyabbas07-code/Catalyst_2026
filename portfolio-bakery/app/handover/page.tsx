@@ -269,7 +269,7 @@ export default function HandoverQueuePage() {
 
       <div className="mt-8">
         <h1 className="font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Handover Queue
+          Bread Basket
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground text-pretty">
           Research left behind when a team member moves on. Each strategy keeps its recipe — take
