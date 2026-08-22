@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Home, Plus, Trash2, Users, FolderPlus, Handshake } from 'lucide-react'
+import { Home, Plus, Trash2, Users, FolderPlus, ChefHat } from 'lucide-react'
 import { useConsole } from '@/components/console-provider'
 import { usePortfolio } from '@/components/portfolio-store'
 import { buttonVariants } from '@/components/ui/button'
@@ -26,7 +26,6 @@ export default function ManagerConsolePage() {
     removeTeamMember,
     assignToProject,
     removeFromProject,
-    createHandover,
     completeHandover,
   } = useConsole()
   const { takeOwnership } = usePortfolio()
@@ -41,9 +40,7 @@ export default function ManagerConsolePage() {
   const [selectedProjectOwner, setSelectedProjectOwner] = useState('')
   const [selectedEmployeeForAssign, setSelectedEmployeeForAssign] = useState('')
   const [selectedProjectForAssign, setSelectedProjectForAssign] = useState('')
-  const [fromEmployee, setFromEmployee] = useState('')
-  const [toEmployee, setToEmployee] = useState('')
-  const [handoverProject, setHandoverProject] = useState('')
+  const [handoverRecipients, setHandoverRecipients] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (!isLoggedIn || userRole !== 'manager') {
@@ -98,18 +95,12 @@ export default function ManagerConsolePage() {
     }
   }
 
-  const handleCreateHandover = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (fromEmployee && toEmployee && handoverProject) {
-      createHandover(fromEmployee, toEmployee, handoverProject)
-      setFromEmployee('')
-      setToEmployee('')
-      setHandoverProject('')
-    }
-  }
-
   const getEmployeeName = (id: string) => employees.find((e) => e.id === id)?.name || id
   const getProjectName = (id: string) => projects.find((p) => p.id === id)?.name || id
+  const getRecommendedRecipient = (projectId: string) => {
+    const project = projects.find((item) => item.id === projectId)
+    return employees.find((employee) => employee.name === project?.sous_chef)?.id ?? 'sarah'
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -247,9 +238,10 @@ export default function ManagerConsolePage() {
                       <div className="mt-2">
                         {project.sous_chef ? (
                           <div className="flex items-center justify-between rounded-lg border border-border/50 bg-secondary/30 p-3">
-                            <p className="text-sm text-foreground">
-                              👨‍🍳 {project.sous_chef}
-                            </p>
+                                <p className="flex items-center gap-1.5 text-sm text-foreground">
+                                  <ChefHat className="size-3.5 text-amber-500" aria-hidden />
+                                  {project.sous_chef}
+                                </p>
                             <button
                               onClick={() => handleRemoveSousChef(project.id)}
                               className={cn(
@@ -594,80 +586,6 @@ export default function ManagerConsolePage() {
             <div className="space-y-6">
               <div className="rounded-xl border border-border bg-card p-6">
                 <h2 className="font-serif text-lg font-semibold text-foreground">
-                  Create Handover Request
-                </h2>
-
-                <form onSubmit={handleCreateHandover} className="mt-6 space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground">
-                      From (Current Team Member)
-                    </label>
-                    <select
-                      value={fromEmployee}
-                      onChange={(e) => setFromEmployee(e.target.value)}
-                      className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">Choose...</option>
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-foreground">
-                      To (New Team Member)
-                    </label>
-                    <select
-                      value={toEmployee}
-                      onChange={(e) => setToEmployee(e.target.value)}
-                      className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">Choose...</option>
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id} disabled={emp.id === fromEmployee}>
-                          {emp.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-foreground">
-                      Project
-                    </label>
-                    <select
-                      value={handoverProject}
-                      onChange={(e) => setHandoverProject(e.target.value)}
-                      className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">Choose...</option>
-                      {projects.map((proj) => (
-                        <option key={proj.id} value={proj.id}>
-                          {proj.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={!fromEmployee || !toEmployee || !handoverProject}
-                    className={cn(
-                      buttonVariants({ variant: 'default' }),
-                      'w-full disabled:opacity-50'
-                    )}
-                  >
-                    <Handshake className="mr-2 size-4" />
-                    Create Handover
-                  </button>
-                </form>
-              </div>
-
-              <div className="rounded-xl border border-border bg-card p-6">
-                <h2 className="font-serif text-lg font-semibold text-foreground">
                   Bread Basket ({handoverQueue.length})
                 </h2>
 
@@ -688,7 +606,10 @@ export default function ManagerConsolePage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-medium text-foreground">
-                              {getEmployeeName(handover.fromEmployeeId)} → {getEmployeeName(handover.toEmployeeId)}
+                              {getEmployeeName(handover.fromEmployeeId)} →{' '}
+                              {handover.status === 'pending'
+                                ? 'Choose recipient'
+                                : getEmployeeName(handover.toEmployeeId)}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               Project: {getProjectName(handover.projectId)}
@@ -701,18 +622,51 @@ export default function ManagerConsolePage() {
                             </p>
                           </div>
                           {handover.status === 'pending' && (
-                            <button
-                              onClick={() => {
-                                const toName = getEmployeeName(handover.toEmployeeId)
-                                completeHandover(handover.id)
-                                takeOwnership(handover.projectId, toName)
-                              }}
-                              className={cn(
-                                buttonVariants({ variant: 'default', size: 'sm' })
-                              )}
-                            >
-                              Complete
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <label className="sr-only" htmlFor={`recipient-${handover.id}`}>
+                                Choose recipient
+                              </label>
+                              <select
+                                id={`recipient-${handover.id}`}
+                                value={
+                                  handoverRecipients[handover.id] ??
+                                  getRecommendedRecipient(handover.projectId)
+                                }
+                                onChange={(event) =>
+                                  setHandoverRecipients((current) => ({
+                                    ...current,
+                                    [handover.id]: event.target.value,
+                                  }))
+                                }
+                                className="h-9 rounded-lg border border-border bg-background px-2 text-sm text-foreground"
+                              >
+                                {employees
+                                  .filter((employee) => employee.id !== handover.fromEmployeeId)
+                                  .map((employee) => (
+                                    <option key={employee.id} value={employee.id}>
+                                      {employee.name}
+                                      {employee.id === getRecommendedRecipient(handover.projectId)
+                                        ? ' (recommended)'
+                                        : ''}
+                                    </option>
+                                  ))}
+                              </select>
+                              <button
+                                onClick={() => {
+                                  const recipientId =
+                                    handoverRecipients[handover.id] ??
+                                    getRecommendedRecipient(handover.projectId)
+                                  const recipientName = getEmployeeName(recipientId)
+                                  completeHandover(handover.id, recipientId)
+                                  takeOwnership(handover.projectId, recipientName)
+                                }}
+                                className={cn(
+                                  buttonVariants({ variant: 'default', size: 'sm' })
+                                )}
+                              >
+                                Complete
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>

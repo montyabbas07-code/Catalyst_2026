@@ -14,7 +14,7 @@ const nav = [
   { href: '/handover', label: 'Bread Basket' },
   { href: '/team', label: 'Team' },
   { href: '/archive', label: 'Archive' },
-  { href: '/console/manager', label: '⚙️ Console', managerOnly: true },
+  { href: '/console/manager', label: 'Console', managerOnly: true },
 ]
 
 function NavLinks({ pathname }: { pathname: string }) {
