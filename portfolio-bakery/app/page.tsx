@@ -92,7 +92,7 @@ export default function DashboardPage() {
                 </Link>
                 <div className="flex items-center gap-3">
                   <span className="text-danger">{missingCount(p)} missing</span>
-                  <ReadinessBadge readiness={p.readiness} />
+                  <ReadinessBadge project={p} />
                 </div>
               </li>
             ))}

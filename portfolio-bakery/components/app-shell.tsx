@@ -11,7 +11,7 @@ import { buttonVariants } from '@/components/ui/button'
 
 const nav = [
   { href: '/', label: 'Portfolio' },
-  { href: '/handover', label: 'Handover Queue' },
+  { href: '/handover', label: 'Bread Basket' },
   { href: '/team', label: 'Team' },
   { href: '/archive', label: 'Archive' },
   { href: '/console/manager', label: '⚙️ Console', managerOnly: true },

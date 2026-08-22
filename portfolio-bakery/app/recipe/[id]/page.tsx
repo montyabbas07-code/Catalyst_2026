@@ -201,7 +201,7 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <StatusPill status={project.status} />
-            <ReadinessBadge readiness={project.readiness} />
+            <ReadinessBadge project={project} />
           </div>
         </div>
       </div>
@@ -285,7 +285,7 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
               Handover Readiness
             </h2>
             <div className="mt-3">
-              <ReadinessBadge readiness={project.readiness} />
+              <ReadinessBadge project={project} />
             </div>
 
             {/* Sous Chef summary */}

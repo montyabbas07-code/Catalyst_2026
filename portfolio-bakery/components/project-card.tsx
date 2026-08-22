@@ -23,7 +23,7 @@ export function ProjectCard({
             Owner: <span className="font-medium text-foreground">{project.owner}</span>
           </p>
         </div>
-        <ReadinessBadge readiness={project.readiness} />
+        <ReadinessBadge project={project} />
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">

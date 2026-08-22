@@ -1,48 +1,79 @@
-import { CircleCheck, CircleAlert, TriangleAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Readiness } from '@/components/portfolio-store'
+import type { Project } from '@/components/portfolio-store'
 
-const readinessMap: Record<
-  Readiness,
-  { label: string; icon: typeof CircleCheck; className: string }
+export type BreadStatus =
+  | 'incomplete'
+  | 'someone-left'
+  | 'working-fine'
+  | 'outdated'
+  | 'losing-money'
+  | 'needs-sous-chef'
+
+const breadStatusMap: Record<
+  BreadStatus,
+  { label: string; image: string; className: string }
 > = {
-  ready: {
-    label: 'Ready',
-    icon: CircleCheck,
-    className: 'bg-success-muted text-success border-success/30',
-  },
-  'needs-review': {
-    label: 'Needs review',
-    icon: TriangleAlert,
-    className: 'bg-warning-muted text-warning border-warning/40',
-  },
   incomplete: {
     label: 'Incomplete',
-    icon: CircleAlert,
-    className: 'bg-danger-muted text-danger border-danger/30',
+    image: '/incomplete.png',
+    className: 'border-danger/30 bg-danger-muted/40 text-danger',
+  },
+  'someone-left': {
+    label: 'Someone left',
+    image: '/someone-left.png',
+    className: 'border-warning/40 bg-warning-muted/40 text-warning',
+  },
+  'working-fine': {
+    label: 'Working fine',
+    image: '/working-fine.png',
+    className: 'border-success/30 bg-success-muted/40 text-success',
+  },
+  outdated: {
+    label: 'Outdated',
+    image: '/outdated.png',
+    className: 'border-warning/40 bg-warning-muted/40 text-warning',
+  },
+  'losing-money': {
+    label: 'Starting to lose money',
+    image: '/losing-money.png',
+    className: 'border-danger/30 bg-danger-muted/40 text-danger',
+  },
+  'needs-sous-chef': {
+    label: 'Needs sous chef',
+    image: '/needs-sous-chef.png',
+    className: 'border-border bg-secondary/60 text-secondary-foreground',
   },
 }
 
 export function ReadinessBadge({
-  readiness,
+  project,
   className,
 }: {
-  readiness: Readiness
+  project: Project
   className?: string
 }) {
-  const { label, icon: Icon, className: c } = readinessMap[readiness]
+  const status = getBreadStatus(project)
+  const { label, image, className: c } = breadStatusMap[status]
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium',
+        'inline-flex min-w-20 flex-col items-center gap-1 rounded-lg border px-2.5 py-2 text-center text-xs font-medium',
         c,
         className,
       )}
     >
-      <Icon className="size-3.5" aria-hidden />
+      <img src={image} alt="" className="size-12 object-contain" aria-hidden />
       {label}
     </span>
   )
+}
+
+function getBreadStatus(project: Project): BreadStatus {
+  if (project.readiness === 'incomplete') return 'incomplete'
+  if (!project.sousChef) return 'needs-sous-chef'
+  if (project.owner === 'Alex Chen' && !project.handedOver) return 'someone-left'
+  if (project.readiness === 'ready') return 'working-fine'
+  return 'outdated'
 }
 
 export function StatusPill({ status }: { status: string }) {
