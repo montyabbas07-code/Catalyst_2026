@@ -18,6 +18,8 @@ import {
   MessageSquarePlus,
   Video,
   X,
+  HelpCircle,
+  Megaphone,
 } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
 import { ReadinessBadge, StatusPill } from '@/components/status-badges'
@@ -30,6 +32,25 @@ import {
 import { useConsole } from '@/components/console-provider'
 import { cn } from '@/lib/utils'
 import { ProjectAccess } from '@/components/project-access'
+
+const recipeFaqs: { q: string; a: string }[] = [
+  {
+    q: 'What is a recipe card?',
+    a: 'A recipe card is the handover document for a strategy. It records the owner, Sous Chef, hypothesis, dataset, parameters, known limitations and readiness so a new owner can run and maintain the algorithm without reverse-engineering the original researcher’s intent.',
+  },
+  {
+    q: 'How do I schedule a handover meeting?',
+    a: 'Open the recipe card and choose “Schedule Meeting” from the Handover Readiness panel. Pick the new owner, a date and a time, then confirm. The previous owner walks the new owner through the algorithm and a recording is attached to the card once the meeting is complete.',
+  },
+  {
+    q: 'Where can I find meeting recordings?',
+    a: 'If a handover meeting has been held, a “Meeting history” section appears on the card with a “View recording” link. Recordings capture the algorithm walkthrough so you can review the context even after ownership has transferred.',
+  },
+  {
+    q: 'What happens when ownership is transferred?',
+    a: 'The new owner becomes the Head Baker and receives a notification. The Sous Chef tips, meeting recordings and field comments stay attached to the card so the handover context is preserved for future owners.',
+  },
+]
 
 function FieldRow({
   field,
@@ -405,6 +426,19 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
               ownerEmail={project.ownerEmail}
             />
 
+            {/* Elevator pitch */}
+            <div className="mt-4 rounded-lg border border-border bg-secondary/40 p-4">
+              <div className="flex items-center gap-1.5">
+                <Megaphone className="size-4 text-gold" aria-hidden />
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Elevator pitch
+                </p>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-foreground text-pretty">
+                {project.elevatorPitch}
+              </p>
+            </div>
+
             {projectMeetings.length > 0 && (
               <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 p-4">
                 <h2 className="font-serif text-lg font-semibold text-foreground">Meeting history</h2>
@@ -444,6 +478,26 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
               <p className="mt-1 text-sm leading-relaxed text-foreground text-pretty">
                 {project.hypothesis}
               </p>
+            </div>
+
+            {/* FAQ */}
+            <div className="mt-4 rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-1.5">
+                <HelpCircle className="size-4 text-muted-foreground" aria-hidden />
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Frequently asked questions
+                </p>
+              </div>
+              <ul className="mt-3 space-y-3">
+                {recipeFaqs.map((faq) => (
+                  <li key={faq.q}>
+                    <p className="text-sm font-medium text-foreground">{faq.q}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground text-pretty">
+                      {faq.a}
+                    </p>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* Field rows */}

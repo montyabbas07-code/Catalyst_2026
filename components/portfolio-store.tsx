@@ -30,6 +30,7 @@ export type Project = {
   status: string
   readiness: Readiness
   hypothesis: string
+  elevatorPitch: string
   fields: RecipeField[]
   handedOver?: boolean
 }
@@ -67,6 +68,8 @@ const seedProjects: Project[] = [
     readiness: 'needs-review',
     hypothesis:
       'Cross-sectional price momentum persists over 1–3 month horizons in liquid ASX 200 names; a dual moving-average crossover captures the trend while filtering short-term noise.',
+    elevatorPitch:
+      'Momentum Alpha is a cross-sectional momentum strategy on liquid ASX 200 names that captures 1–3 month trends with a dual moving-average crossover while filtering short-term noise. It is built for portfolio managers who need a transparent, well-documented trend signal with clear ownership and handover context. The recipe records the dataset, parameters, assumptions and known limitations so a new owner can run it without reverse-engineering the researcher’s intent. A recorded walkthrough with the original owner is available, and the Sous Chef has flagged volatility-filtering and dividend adjustments as must-know caveats.',
     fields: [
       {
         key: 'code',
@@ -136,6 +139,8 @@ const seedProjects: Project[] = [
     readiness: 'needs-review',
     hypothesis:
       'Short-horizon deviations from a rolling mean revert within days for high-liquidity pairs; entries are scaled by z-score bands.',
+    elevatorPitch:
+      'Mean Reversion Strategy trades short-horizon deviations from a rolling mean in high-liquidity pairs, scaling entries by z-score bands for a quick, high-turnover alpha. It is designed for desks that can meet tight latency constraints and want a compact, fully-documented signal with explicit market-impact assumptions. The recipe captures the intraday data quirks, parameter sensitivity and the strong regime-dependence a new owner must respect. Sous Chef notes recommend a safer ±1.5 band with a volume gate and order-book depth estimates to sharpen the backtest.',
     fields: [
       { key: 'code', label: 'Code version', value: 'commit 3f91be', complete: true, peerComment: null },
       {
@@ -189,6 +194,8 @@ const seedProjects: Project[] = [
     readiness: 'incomplete',
     hypothesis:
       'Large overnight gaps partially reverse in the first hour of trade; sizing is capped to manage tail risk.',
+    elevatorPitch:
+      'Overnight Gap Reversal profits from large overnight gaps that partially reverse in the first hour of trade, with sizing capped to control tail risk. It targets macro-event days such as payrolls and CPI where the edge is strongest, and ships with a documented macro filter to curb black-swan drawdowns. The recipe records the tick-data source, gap thresholds and the 3% cap that lifted Sharpe from 1.2 to 1.8. New owners should note the interest-rate-regime fragility called out in the known limitations.',
     fields: [
       { key: 'code', label: 'Code version', value: 'commit 7d20aa', complete: true, peerComment: null },
       { key: 'dataset', label: 'Dataset', value: 'S&P 500 futures tick data (2020-2025)', complete: true, peerComment: null },
@@ -209,6 +216,8 @@ const seedProjects: Project[] = [
     readiness: 'ready',
     hypothesis:
       'A realized-volatility overlay scales strategy exposure down during turbulent regimes, improving risk-adjusted returns.',
+    elevatorPitch:
+      'Volatility Filter is a realized-volatility overlay that scales strategy exposure down in turbulent regimes to improve risk-adjusted returns. Approved as a universal module across equities desks, it is the most handover-ready recipe in the portfolio with a clean two-band design. The documentation covers the dataset, parameters and the VIX-proxy assumption, with a Sous Chef suggestion to add a local vol measure for ASX correlation. It serves as the reference example of a well-handled ownership transfer.',
     fields: [
       { key: 'code', label: 'Code version', value: 'commit c11e09', complete: true, peerComment: null },
       {
@@ -265,6 +274,8 @@ const seedProjects: Project[] = [
     readiness: 'incomplete',
     hypothesis:
       'Order-book depth changes lead short-term price moves in mid-cap names; early prototype signal.',
+    elevatorPitch:
+      'Liquidity Signal is an early-stage prototype that uses order-book depth changes to anticipate short-term moves in mid-cap names. It is intentionally incomplete — a research scratchpad for a new owner to extend — with code, data and initial findings captured but limitations still open. The recipe makes that exploratory state explicit so ownership transfer is honest about what is proven versus speculative. Sous Chef tips point to where the signal most needs hardening before any production use.',
     fields: [
       { key: 'code', label: 'Code version', value: 'commit 5a7c30', complete: true, peerComment: null },
       {
