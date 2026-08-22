@@ -31,7 +31,7 @@ function QueueCard({
 
   if (project.handedOver) {
     return (
-      <article className="rounded-xl border border-success/40 bg-success-muted/40 p-5 shadow-sm">
+      <article className="flex h-full rounded-xl border border-success/40 bg-success-muted/40 p-5 shadow-sm">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-success/15 text-success">
             <CircleCheck className="size-5" aria-hidden />
@@ -64,7 +64,7 @@ function QueueCard({
   }
 
   return (
-    <article className="flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm">
+    <article className="flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-serif text-lg font-semibold text-foreground">{project.name}</h3>
@@ -79,7 +79,7 @@ function QueueCard({
       </div>
 
       <div className="mt-4 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2">
-        <div className="h-full min-h-40 rounded-lg border border-success/25 bg-success-muted/40 p-3">
+        <div className="h-48 rounded-lg border border-success/25 bg-success-muted/40 p-3">
           <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-success">
             <Check className="size-3.5" aria-hidden />
             Preserved ({preserved.length})
@@ -92,7 +92,7 @@ function QueueCard({
             ))}
           </ul>
         </div>
-        <div className="h-full min-h-40 rounded-lg border border-danger/25 bg-danger-muted/40 p-3">
+        <div className="h-48 rounded-lg border border-danger/25 bg-danger-muted/40 p-3">
           <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-danger">
             <CircleAlert className="size-3.5" aria-hidden />
             Missing ({missing.length})
@@ -288,7 +288,7 @@ export default function HandoverQueuePage() {
         </p>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid auto-rows-fr grid-cols-1 gap-4 lg:grid-cols-2">
         {alexProjects.map((p) => (
           <QueueCard key={p.id} project={p} onTake={setPending} />
         ))}

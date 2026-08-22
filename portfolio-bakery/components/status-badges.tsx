@@ -57,7 +57,7 @@ export function ReadinessBadge({
   return (
     <span
       className={cn(
-        'inline-flex h-24 w-32 flex-col items-center justify-center gap-1 rounded-lg border px-2.5 py-2 text-center text-xs font-medium',
+        'inline-flex h-24 w-32 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border px-2.5 py-2 text-center text-xs font-medium',
         c,
         className,
       )}
