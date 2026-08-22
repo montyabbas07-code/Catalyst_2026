@@ -1,4 +1,4 @@
-# Byte Sized Egarians
+# Portfolio Bakery
 
 Team of Three Unimelb First Years
 
@@ -6,7 +6,7 @@ Team of Three Unimelb First Years
 
 https://catalyst-2026-7k28.vercel.app/handover
 
-## Portfolio Bakery
+## Byte Sized Edgarians
 
 > **You kept the model, but did you keep the recipe?**
 
