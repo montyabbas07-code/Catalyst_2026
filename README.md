@@ -13,12 +13,11 @@ When a quant researcher builds a trading strategy, the final code is only part o
 ## What We Built
 After conducting careful research and an important interview with a canva engineer, we vastly improved upon the applicability of our tool.
 - Portfolio page: Displays team models/strategies, their current readiness, ownership, missing handover information and quick links to each recipe card and repositories.
--- Recipe Cards: Detailed documentaion links of each model , including strategy hypothesis, code version, parameters, research notes + assumptions, Github link, team feedback and more.
+- Recipe Cards: Detailed documentaion links of each model , including strategy hypothesis, code version, parameters, research notes + assumptions, Github link, team feedback and more.
 - Bread Basket: The handover workspace for strategies after owners have either left or moved teams. Members can review presented to code and request ownernship whilst team laders/managers can allocate models
 - Team: Team directory showing each researcher's role, availability, contact email, active strategies and backup responsibilities. The goal of this page is to assist team members to identify who owns or supports each model
 - Archive: Historical stroage area of past retired models or unowned models that is unable to be successfully handed over, includes codebase link, research data, desciption, archive date and more.
-- Console: Administrative console for managing portfolio conepts, employees, ownership and records
-- -Manager Console: Manager view for adminstrative functions including creating projects, assigning new owners, managing employees and monitoring handovers.
+- Manager Console: Manager view for adminstrative functions including creating projects, assigning new owners, managing employees and monitoring handovers.
 
 
  ## Our Assumptions and interviews
