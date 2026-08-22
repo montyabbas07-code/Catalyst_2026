@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import {
   ArrowLeft,
+  CalendarPlus,
   Check,
   CircleCheck,
   TriangleAlert,
@@ -15,15 +16,17 @@ import {
   ChevronUp,
   ChefHat,
   MessageSquarePlus,
-  Plus,
-  Pencil,
-  Trash2,
-  Save,
+  Video,
+  X,
 } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
 import { ReadinessBadge, StatusPill } from '@/components/status-badges'
 import { Button } from '@/components/ui/button'
-import { usePortfolio, type RecipeField, type Faq } from '@/components/portfolio-store'
+import {
+  usePortfolio,
+  type RecipeField,
+  type TeamMember,
+} from '@/components/portfolio-store'
 import { useConsole } from '@/components/console-provider'
 import { cn } from '@/lib/utils'
 import { ProjectAccess } from '@/components/project-access'
@@ -168,434 +171,159 @@ function FieldRow({
   )
 }
 
-function ElevatorPitchCard({
-  elevatorPitch,
-  isOwner,
-  onSave,
+function ScheduleMeetingModal({
+  projectName,
+  previousOwner,
+  team,
+  newOwner,
+  onOwnerChange,
+  scheduledDate,
+  onDateChange,
+  scheduledTime,
+  onTimeChange,
+  meetingNotes,
+  onNotesChange,
+  onCancel,
+  onConfirm,
 }: {
-  elevatorPitch?: string
-  isOwner: boolean
-  onSave: (text: string) => void
+  projectName: string
+  previousOwner: string
+  team: TeamMember[]
+  newOwner: string
+  onOwnerChange: (owner: string) => void
+  scheduledDate: string
+  onDateChange: (date: string) => void
+  scheduledTime: string
+  onTimeChange: (time: string) => void
+  meetingNotes: string
+  onNotesChange: (notes: string) => void
+  onCancel: () => void
+  onConfirm: () => void
 }) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(elevatorPitch ?? '')
-
-  const startEdit = () => {
-    setDraft(elevatorPitch ?? '')
-    setEditing(true)
-  }
-
-  const save = () => {
-    onSave(draft.trim())
-    setEditing(false)
-  }
+  const canConfirm = Boolean(newOwner && scheduledDate && scheduledTime)
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="font-serif text-lg font-semibold text-foreground">
-          Elevator Pitch
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="schedule-meeting-title"
+    >
+      <div
+        className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+        onClick={onCancel}
+        aria-hidden
+      />
+      <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
+        <button
+          onClick={onCancel}
+          className="absolute right-4 top-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Close"
+        >
+          <X className="size-4" aria-hidden />
+        </button>
+        <span className="flex size-11 items-center justify-center rounded-xl bg-gold/15 text-gold-foreground">
+          <CalendarPlus className="size-5 text-gold" aria-hidden />
+        </span>
+        <h2 id="schedule-meeting-title" className="mt-4 font-serif text-xl font-semibold text-foreground">
+          Schedule handover meeting
         </h2>
-        {isOwner && !editing && (
-          <button
-            onClick={startEdit}
-            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Pencil className="size-3.5" />
-            Edit
-          </button>
-        )}
-      </div>
-      {editing ? (
-        <div className="space-y-3">
-          <textarea
-            className="w-full rounded-md border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            rows={5}
-            placeholder="Describe this project in a sentence or two..."
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={save}
-              className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setEditing(false)}
-              className="rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground hover:bg-secondary transition-colors"
-            >
-              Cancel
-            </button>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">
+          {previousOwner} will walk the new owner through the algorithm behind {projectName}.
+        </p>
+
+        <label className="mt-5 block text-sm font-medium text-foreground" htmlFor="meeting-owner">
+          New owner
+        </label>
+        <select
+          id="meeting-owner"
+          value={newOwner}
+          onChange={(e) => onOwnerChange(e.target.value)}
+          className="mt-2 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {team.map((member) => (
+            <option key={member.id} value={member.name}>
+              {member.name} · {member.role}
+            </option>
+          ))}
+        </select>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="meeting-date" className="block text-sm font-medium text-foreground">
+              Date
+            </label>
+            <input
+              id="meeting-date"
+              type="date"
+              value={scheduledDate}
+              onChange={(e) => onDateChange(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </div>
+          <div>
+            <label htmlFor="meeting-time" className="block text-sm font-medium text-foreground">
+              Time
+            </label>
+            <input
+              id="meeting-time"
+              type="time"
+              value={scheduledTime}
+              onChange={(e) => onTimeChange(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
           </div>
         </div>
-      ) : elevatorPitch ? (
-        <p className="text-sm leading-relaxed text-foreground text-pretty">
-          {elevatorPitch}
-        </p>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          No elevator pitch yet.
-          {isOwner && ' Click “Edit” to add one.'}
-        </p>
-      )}
-    </div>
-  )
-}
 
-function FaqSection({
-  faqs,
-  isOwner,
-  ownerName,
-  onSave,
-}: {
-  faqs?: Faq[]
-  isOwner: boolean
-  ownerName: string
-  onSave: (faqs: Faq[]) => void
-}) {
-  const { displayName } = useConsole()
-  const items = faqs ?? []
-  const [openIds, setOpenIds] = useState<Set<string>>(new Set())
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [draftQ, setDraftQ] = useState('')
-  const [draftA, setDraftA] = useState('')
-  const [adding, setAdding] = useState(false)
-  const [newQ, setNewQ] = useState('')
-  const [newA, setNewA] = useState('')
-  const [asking, setAsking] = useState(false)
-  const [askText, setAskText] = useState('')
-  const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({})
-
-  const setAnswerDraft = (id: string, value: string) =>
-    setAnswerDrafts((prev) => ({ ...prev, [id]: value }))
-
-  const toggle = (id: string) =>
-    setOpenIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-
-  const startEdit = (faq: Faq) => {
-    setDraftQ(faq.question)
-    setDraftA(faq.answer)
-    setEditingId(faq.id)
-  }
-
-  const saveEdit = (id: string) => {
-    onSave(
-      items.map((f) =>
-        f.id === id ? { ...f, question: draftQ.trim(), answer: draftA.trim() } : f,
-      ),
-    )
-    setEditingId(null)
-  }
-
-  const deleteFaq = (id: string) => {
-    onSave(items.filter((f) => f.id !== id))
-  }
-
-  const saveAdd = () => {
-    if (!newQ.trim() || !newA.trim()) return
-    onSave([
-      ...items,
-      { id: crypto.randomUUID(), question: newQ.trim(), answer: newA.trim() },
-    ])
-    setNewQ('')
-    setNewA('')
-    setAdding(false)
-  }
-
-  const saveAsk = () => {
-    if (!askText.trim()) return
-    onSave([
-      ...items,
-      {
-        id: crypto.randomUUID(),
-        question: askText.trim(),
-        answer: '',
-        askedBy: displayName ?? 'A visitor',
-      },
-    ])
-    setAskText('')
-    setAsking(false)
-  }
-
-  const answerPending = (id: string, answer: string) => {
-    onSave(
-      items.map((f) =>
-        f.id === id ? { ...f, answer: answer.trim() } : f,
-      ),
-    )
-  }
-
-  return (
-    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-serif text-lg font-semibold text-foreground">
-          FAQ{items.length > 0 && <span className="text-muted-foreground"> ({items.length})</span>}
-        </h2>
-        <div className="flex items-center gap-3">
-          {!asking && (
-            <button
-              onClick={() => setAsking(true)}
-              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <MessageSquarePlus className="size-3.5" />
-              Ask a question
-            </button>
-          )}
-          {isOwner && !adding && !asking && (
-            <button
-              onClick={() => setAdding(true)}
-              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Plus className="size-3.5" />
-              Add FAQ
-            </button>
-          )}
-        </div>
-      </div>
-
-      {items.length === 0 && !adding && !asking && (
-        <p className="text-sm text-muted-foreground">
-          No FAQs yet.{isOwner ? ' Click “Add FAQ” to create one.' : ' Ask a question to start the conversation.'}
-        </p>
-      )}
-
-      <div className="divide-y divide-border">
-        {items.map((faq) => {
-          const open = openIds.has(faq.id)
-          const editing = editingId === faq.id
-          return (
-            <div key={faq.id} className="py-3">
-              {editing ? (
-                <div className="space-y-2">
-                  <input
-                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                    placeholder="Question"
-                    value={draftQ}
-                    onChange={(e) => setDraftQ(e.target.value)}
-                  />
-                  <textarea
-                    className="w-full rounded-md border border-border bg-background p-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                    rows={3}
-                    placeholder="Answer"
-                    value={draftA}
-                    onChange={(e) => setDraftA(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => saveEdit(faq.id)}
-                      className="flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      <Save className="size-3.5" />
-                      Save
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground hover:bg-secondary transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : faq.answer ? (
-                <>
-                  <button
-                    onClick={() => toggle(faq.id)}
-                    className="group flex w-full items-center justify-between gap-3 text-left"
-                  >
-                    <span className="text-sm font-medium text-foreground">
-                      {faq.question}
-                    </span>
-                    <span className="shrink-0 text-muted-foreground transition-transform group-hover:text-foreground">
-                      {open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-                    </span>
-                  </button>
-                  {open && (
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">
-                      {faq.answer}
-                    </p>
-                  )}
-                  {isOwner && (
-                    <div className="mt-2 flex gap-3">
-                      <button
-                        onClick={() => startEdit(faq)}
-                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Pencil className="size-3.5" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteFaq(faq.id)}
-                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-danger transition-colors"
-                      >
-                        <Trash2 className="size-3.5" />
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div>
-                  <button
-                    onClick={() => toggle(faq.id)}
-                    className="group flex w-full items-center justify-between gap-3 text-left"
-                  >
-                    <span className="text-sm font-medium text-foreground">
-                      {faq.question}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <span className="rounded-full bg-warning-muted px-2 py-0.5 text-[11px] font-medium text-warning">
-                        Pending answer
-                      </span>
-                      <span className="shrink-0 text-muted-foreground transition-transform group-hover:text-foreground">
-                        {open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-                      </span>
-                    </span>
-                  </button>
-                  {faq.askedBy && (
-                    <p className="mt-1 text-xs text-muted-foreground">Asked by {faq.askedBy}</p>
-                  )}
-                  {open && (
-                    isOwner ? (
-                      <div className="mt-2 space-y-2">
-                        <textarea
-                          className="w-full rounded-md border border-border bg-background p-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                          rows={3}
-                          placeholder="Write an answer..."
-                          value={answerDrafts[faq.id] ?? ''}
-                          onChange={(e) => setAnswerDraft(faq.id, e.target.value)}
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => answerPending(faq.id, answerDrafts[faq.id] ?? '')}
-                            className="flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                          >
-                            <Save className="size-3.5" />
-                            Save answer
-                          </button>
-                          <button
-                            onClick={() => setAnswerDraft(faq.id, '')}
-                            className="rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground hover:bg-secondary transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Awaiting an answer from {ownerName}.
-                      </p>
-                    )
-                  )}
-                  {isOwner && (
-                    <div className="mt-2 flex gap-3">
-                      <button
-                        onClick={() => startEdit(faq)}
-                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Pencil className="size-3.5" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteFaq(faq.id)}
-                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-danger transition-colors"
-                      >
-                        <Trash2 className="size-3.5" />
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      {adding && (
-        <div className="mt-3 space-y-2 rounded-lg border border-border bg-secondary/40 p-3">
-          <input
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            placeholder="Question"
-            value={newQ}
-            onChange={(e) => setNewQ(e.target.value)}
-          />
+        <div className="mt-4">
+          <label htmlFor="meeting-notes" className="block text-sm font-medium text-foreground">
+            Notes
+          </label>
           <textarea
-            className="w-full rounded-md border border-border bg-background p-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            id="meeting-notes"
             rows={3}
-            placeholder="Answer"
-            value={newA}
-            onChange={(e) => setNewA(e.target.value)}
+            placeholder="What should the walkthrough cover?"
+            value={meetingNotes}
+            onChange={(e) => onNotesChange(e.target.value)}
+            className="mt-1 block w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           />
-          <div className="flex gap-2">
-            <button
-              onClick={saveAdd}
-              className="flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Save className="size-3.5" />
-              Add
-            </button>
-            <button
-              onClick={() => { setAdding(false); setNewQ(''); setNewA('') }}
-              className="rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground hover:bg-secondary transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
         </div>
-      )}
 
-      {asking && (
-        <div className="mt-3 space-y-2 rounded-lg border border-border bg-secondary/40 p-3">
-          <textarea
-            className="w-full rounded-md border border-border bg-background p-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            rows={3}
-            placeholder="Ask the owner a question about this project..."
-            value={askText}
-            onChange={(e) => setAskText(e.target.value)}
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={saveAsk}
-              className="flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Send className="size-3.5" />
-              Submit question
-            </button>
-            <button
-              onClick={() => { setAsking(false); setAskText('') }}
-              className="rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground hover:bg-secondary transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
+        <div className="mt-6 flex justify-end gap-2">
+          <Button variant="outline" className="h-10 px-4" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button className="h-10 gap-2 px-4" onClick={onConfirm} disabled={!canConfirm}>
+            <CalendarPlus className="size-4" aria-hidden />
+            Schedule Meeting
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   )
 }
 
 export default function RecipePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { getProject, addPeerComment, updateElevatorPitch, updateFaqs } = usePortfolio()
-  const { displayName } = useConsole()
+  const { getProject, addPeerComment, team, requestMissingContext } = usePortfolio()
+  const { meetings, scheduleMeeting } = useConsole()
   const project = getProject(id)
   const [requested, setRequested] = useState(false)
+  const [meetingOpen, setMeetingOpen] = useState(false)
+  const [newOwner, setNewOwner] = useState('')
+  const [scheduledDate, setScheduledDate] = useState<string>('')
+  const [scheduledTime, setScheduledTime] = useState<string>('')
+  const [meetingNotes, setMeetingNotes] = useState<string>('')
 
   if (!project) notFound()
 
-  const isOwner = displayName === project.owner
+  const assignableMembers = team.filter((member) => member.availability !== 'transferred')
 
   const ready = project.fields.filter((f) => f.complete)
   const missing = project.fields.filter((f) => !f.complete)
   const commit = project.fields.find((f) => f.key === 'code')?.value
   const peerCommentCount = project.fields.filter((f) => f.peerComment).length
+  const projectMeetings = meetings.filter((meeting) => meeting.projectId === project.id)
 
   return (
     <AppShell>
@@ -630,13 +358,7 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Recipe card */}
-        <div className="lg:col-span-2 space-y-6">
-          <ElevatorPitchCard
-            elevatorPitch={project.elevatorPitch}
-            isOwner={isOwner}
-            onSave={(text) => updateElevatorPitch(project.id, text)}
-          />
-
+        <div className="lg:col-span-2">
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="font-serif text-lg font-semibold text-foreground">
@@ -683,6 +405,37 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
               ownerEmail={project.ownerEmail}
             />
 
+            {projectMeetings.length > 0 && (
+              <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 p-4">
+                <h2 className="font-serif text-lg font-semibold text-foreground">Meeting history</h2>
+                <div className="mt-3 space-y-3">
+                  {projectMeetings.map((meeting) => (
+                    <div key={meeting.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border/60 bg-card/60 p-3">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          Algorithm walkthrough with {meeting.previousOwner}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {meeting.scheduledDate} at {meeting.scheduledTime} · {meeting.status.replace('-', ' ')}
+                        </p>
+                      </div>
+                      {meeting.recordingUrl && (
+                        <a
+                          href={meeting.recordingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:underline"
+                        >
+                          <Video className="size-4" aria-hidden />
+                          View recording
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Hypothesis */}
             <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-gold-foreground/70">
@@ -710,13 +463,6 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
               ))}
             </div>
           </div>
-
-          <FaqSection
-            faqs={project.faqs}
-            isOwner={isOwner}
-            ownerName={project.owner}
-            onSave={(next) => updateFaqs(project.id, next)}
-          />
         </div>
 
         {/* Handover readiness panel */}
@@ -792,7 +538,10 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
               <Button
                 className="h-10 w-full gap-2"
                 variant={requested ? 'secondary' : 'default'}
-                onClick={() => setRequested(true)}
+                onClick={() => {
+                  setRequested(true)
+                  requestMissingContext(project.id)
+                }}
                 disabled={requested}
               >
                 {requested ? (
@@ -807,15 +556,61 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
                   </>
                 )}
               </Button>
+              <Button
+                variant="outline"
+                className="h-10 w-full gap-2"
+                onClick={() => {
+                  if (!newOwner) {
+                    setNewOwner(assignableMembers[0]?.name ?? '')
+                  }
+                  setMeetingOpen(true)
+                }}
+              >
+                <CalendarPlus className="size-4" aria-hidden />
+                Schedule Meeting
+              </Button>
               {requested && (
                 <p className="pt-1 text-center text-xs text-muted-foreground">
                   {project.owner} has been notified to complete the missing fields.
+                </p>
+              )}
+              {scheduledDate && !meetingOpen && (
+                <p className="pt-1 text-center text-xs text-muted-foreground">
+                  Meeting scheduled for {scheduledDate} at {scheduledTime}
                 </p>
               )}
             </div>
           </div>
         </aside>
       </div>
+
+      {meetingOpen && (
+        <ScheduleMeetingModal
+          projectName={project.name}
+          previousOwner={project.owner}
+          team={assignableMembers}
+          newOwner={newOwner}
+          onOwnerChange={setNewOwner}
+          scheduledDate={scheduledDate}
+          onDateChange={setScheduledDate}
+          scheduledTime={scheduledTime}
+          onTimeChange={setScheduledTime}
+          meetingNotes={meetingNotes}
+          onNotesChange={setMeetingNotes}
+          onCancel={() => setMeetingOpen(false)}
+          onConfirm={() => {
+            scheduleMeeting({
+              projectId: project.id,
+              previousOwner: project.owner,
+              newOwner,
+              scheduledDate,
+              scheduledTime,
+              notes: meetingNotes,
+            })
+            setMeetingOpen(false)
+          }}
+        />
+      )}
     </AppShell>
   )
 }

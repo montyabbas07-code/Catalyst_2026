@@ -2,12 +2,197 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Info, LogOut } from 'lucide-react'
+import { useState } from 'react'
+import { Bell, CircleAlert, Info, LogOut, X } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { cn } from '@/lib/utils'
 import { usePortfolio } from '@/components/portfolio-store'
-import { useConsole } from '@/components/console-provider'
+import { useConsole, type Notification } from '@/components/console-provider'
 import { buttonVariants } from '@/components/ui/button'
+
+export function NotificationCenter() {
+  const [open, setOpen] = useState(false)
+  const [localReadIds, setLocalReadIds] = useState<string[]>([])
+  const [localDismissedIds, setLocalDismissedIds] = useState<string[]>([])
+  const {
+    userRole,
+    employeeId,
+    notifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+    dismissNotification,
+    respondToRecommendation,
+  } = useConsole()
+  const { projects, contextRequests } = usePortfolio()
+  const contextNotifications: Notification[] = contextRequests.map((request) => {
+    const project = projects.find((item) => item.id === request.projectId)
+    return {
+      id: `context-request-${request.id}`,
+      audience: 'manager' as const,
+      title: `${project?.name ?? 'Project'} needs missing context`,
+      description: `${project?.owner ?? 'The owner'} has been asked to complete missing recipe fields.`,
+      timestamp: request.createdAt,
+      severity: 'warning' as const,
+      actionLabel: 'Review recipe',
+      actionHref: `/recipe/${request.projectId}`,
+    }
+  })
+  const allNotifications = [...notifications, ...contextNotifications]
+  const visibleNotifications = allNotifications.filter(
+    (notification) =>
+      notification.audience === userRole &&
+      !localDismissedIds.includes(notification.id) &&
+      (userRole !== 'employee' || notification.recipientId === employeeId),
+  )
+  const unreadCount = visibleNotifications.filter(
+    (notification) =>
+      !notification.read && !localReadIds.includes(notification.id),
+  ).length
+  const markRead = (notificationId: string) => {
+    if (notificationId.startsWith('context-request-')) {
+      setLocalReadIds((current) => [...new Set([...current, notificationId])])
+    } else {
+      markNotificationRead(notificationId)
+    }
+  }
+  const dismiss = (notificationId: string) => {
+    if (notificationId.startsWith('context-request-')) {
+      setLocalDismissedIds((current) => [...new Set([...current, notificationId])])
+    } else {
+      dismissNotification(notificationId)
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className={cn(
+          buttonVariants({ variant: 'outline', size: 'icon' }),
+          'relative h-9 w-9',
+        )}
+        aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
+        aria-expanded={open}
+      >
+        <Bell className="size-4" aria-hidden />
+        {unreadCount > 0 && (
+          <span className="absolute right-0 top-0 flex size-5 -translate-y-1/3 translate-x-1/3 items-center justify-center rounded-full bg-danger text-[10px] font-semibold text-danger-foreground">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-11 z-50 w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-border bg-card p-4 shadow-xl">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-serif text-lg font-semibold text-foreground">Notifications</h2>
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    markAllNotificationsRead()
+                    setLocalReadIds(visibleNotifications.map((notification) => notification.id))
+                  }}
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Mark all read
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Close notifications"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 max-h-[min(28rem,70vh)] space-y-2 overflow-y-auto">
+            {visibleNotifications.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">You&apos;re all caught up.</p>
+            ) : (
+              visibleNotifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={cn(
+                    'rounded-lg border p-3',
+                    notification.read || localReadIds.includes(notification.id)
+                      ? 'border-border/60 bg-background'
+                      : 'border-warning/40 bg-warning-muted/30',
+                  )}
+                >
+                  <div className="flex items-start gap-2">
+                    <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground">{notification.title}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{notification.description}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {notification.actionHref && notification.actionLabel && (
+                          <Link
+                            href={notification.actionHref}
+                            onClick={() => markRead(notification.id)}
+                            className="text-xs font-semibold text-foreground underline-offset-2 hover:underline"
+                          >
+                            {notification.actionLabel}
+                          </Link>
+                        )}
+                        {notification.kind === 'recommendation' &&
+                          notification.relatedHandoverId &&
+                          userRole === 'employee' && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  respondToRecommendation(notification.relatedHandoverId!, true)
+                                  markNotificationRead(notification.id)
+                                }}
+                                className="text-xs font-semibold text-success hover:underline"
+                              >
+                                Accept
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  respondToRecommendation(notification.relatedHandoverId!, false)
+                                  markNotificationRead(notification.id)
+                                }}
+                                className="text-xs font-semibold text-danger hover:underline"
+                              >
+                                Decline
+                              </button>
+                            </>
+                          )}
+                        {!notification.read && !localReadIds.includes(notification.id) && (
+                          <button
+                            type="button"
+                            onClick={() => markRead(notification.id)}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            Mark read
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => dismiss(notification.id)}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const nav = [
   { href: '/', label: 'Portfolio' },
@@ -81,8 +266,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </p>
             )}
           </div>
-          <nav className="flex items-center gap-1 overflow-x-auto">
-            <NavLinks pathname={pathname} />
+          <div className="flex min-w-0 items-center gap-2">
+            <nav className="min-w-0 flex-1 overflow-x-auto">
+              <div className="flex w-max items-center gap-1">
+                <NavLinks pathname={pathname} />
+              </div>
+            </nav>
+            <NotificationCenter />
             {displayName && (
               <p className="ml-2 hidden shrink-0 text-xs text-muted-foreground md:block">
                 {displayName}
@@ -93,13 +283,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={handleLogout}
               className={cn(
                 buttonVariants({ variant: 'outline' }),
-                'ml-2 h-9 shrink-0 gap-1.5 px-3 text-xs',
+                'h-9 shrink-0 gap-1.5 px-3 text-xs',
               )}
             >
               <LogOut className="size-3.5" />
               Logout
             </button>
-          </nav>
+          </div>
         </div>
         <div className="border-t border-border/60 bg-gold/10">
           <p className="mx-auto w-full max-w-6xl px-4 py-1.5 text-center font-serif text-sm italic text-foreground/80 sm:px-6">
