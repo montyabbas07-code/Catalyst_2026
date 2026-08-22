@@ -78,8 +78,8 @@ function QueueCard({
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-success/25 bg-success-muted/40 p-3">
+      <div className="mt-4 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2">
+        <div className="h-full min-h-40 rounded-lg border border-success/25 bg-success-muted/40 p-3">
           <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-success">
             <Check className="size-3.5" aria-hidden />
             Preserved ({preserved.length})
@@ -92,7 +92,7 @@ function QueueCard({
             ))}
           </ul>
         </div>
-        <div className="rounded-lg border border-danger/25 bg-danger-muted/40 p-3">
+        <div className="h-full min-h-40 rounded-lg border border-danger/25 bg-danger-muted/40 p-3">
           <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-danger">
             <CircleAlert className="size-3.5" aria-hidden />
             Missing ({missing.length})
