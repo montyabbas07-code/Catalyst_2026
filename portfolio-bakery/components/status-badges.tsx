@@ -14,17 +14,17 @@ const breadStatusMap: Record<
   { label: string; image: string; className: string }
 > = {
   incomplete: {
-    label: 'Incomplete',
+    label: 'Needs Ingredients',
     image: '/incomplete.png',
     className: 'border-danger/30 bg-danger-muted/40 text-danger',
   },
   'someone-left': {
-    label: 'Someone left',
+    label: 'Baker Required',
     image: '/someone-left.png',
     className: 'border-warning/40 bg-warning-muted/40 text-warning',
   },
   'working-fine': {
-    label: 'Working fine',
+    label: 'Freshly Baked',
     image: '/working-fine.png',
     className: 'border-success/30 bg-success-muted/40 text-success',
   },
