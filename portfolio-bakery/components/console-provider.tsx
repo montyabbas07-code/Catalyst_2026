@@ -66,7 +66,7 @@ export type ConsoleContextType = {
 
   // Manager actions - Handover
   createHandover: (fromEmployeeId: string, toEmployeeId: string, projectId: string) => void
-  completeHandover: (handoverId: string) => void
+  completeHandover: (handoverId: string, recipientId?: string) => void
   transferProjectOwnership: (projectId: string, newOwnerName: string) => void
   logCompletedHandover: (fromEmployeeId: string, toEmployeeId: string, projectId: string) => void
 }
@@ -84,7 +84,7 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
   const [employees, setEmployees] = useState<Employee[]>([
     { id: 'alex', name: 'Alex Chen', role: 'owner', projects: ['momentum-alpha', 'mean-reversion', 'overnight-gap'] },
     { id: 'sarah', name: 'Sarah Patel', role: 'owner', projects: ['volatility-filter'] },
-    { id: 'daniel', name: 'Daniel Kim', role: 'owner', projects: [] },
+    { id: 'daniel', name: 'Daniel Kim', role: 'owner', projects: ['liquidity-signal'] },
   ])
 
   const [projects, setProjects] = useState<Project[]>([
@@ -116,9 +116,27 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
       sous_chef: 'Daniel Kim',
       teamMembers: ['alex'],
     },
+    {
+      id: 'liquidity-signal',
+      name: 'Liquidity Signal',
+      owner: 'Daniel Kim',
+      sous_chef: 'Sarah Patel',
+      teamMembers: [],
+    },
   ])
 
-  const [handoverQueue, setHandoverQueue] = useState<HandoverItem[]>([])
+  const [handoverQueue, setHandoverQueue] = useState<HandoverItem[]>(() =>
+    projects
+      .filter((project) => project.owner === 'Alex Chen')
+      .map((project, index) => ({
+        id: `initial-handover-${index + 1}`,
+        fromEmployeeId: 'alex',
+        toEmployeeId: '',
+        projectId: project.id,
+        status: 'pending' as const,
+        createdAt: new Date(),
+      })),
+  )
 
   const login = (inputUsername: string, password: string): boolean => {
     if (
@@ -291,6 +309,21 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
   }
 
   const createHandover = (fromEmployeeId: string, toEmployeeId: string, projectId: string) => {
+    const project = projects.find((p) => p.id === projectId)
+    const fromEmployee = employees.find((e) => e.id === fromEmployeeId)
+
+    if (
+      !project ||
+      !fromEmployee ||
+      project.owner !== fromEmployee.name ||
+      fromEmployeeId === toEmployeeId ||
+      handoverQueue.some(
+        (handover) => handover.projectId === projectId && handover.status === 'pending',
+      )
+    ) {
+      return
+    }
+
     const newHandover: HandoverItem = {
       id: Date.now().toString(),
       fromEmployeeId,
@@ -303,11 +336,13 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
     setHandoverQueue((prev) => [...prev, newHandover])
   }
 
-  const completeHandover = (handoverId: string) => {
+  const completeHandover = (handoverId: string, recipientId?: string) => {
     const handover = handoverQueue.find((h) => h.id === handoverId)
     if (!handover) return
 
-    const toEmployee = employees.find((e) => e.id === handover.toEmployeeId)
+    const toEmployee = employees.find(
+      (e) => e.id === (recipientId ?? handover.toEmployeeId),
+    )
     if (toEmployee) {
       transferProjectOwnership(handover.projectId, toEmployee.name)
     }
@@ -315,7 +350,11 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
     setHandoverQueue((prev) =>
       prev.map((h) =>
         h.id === handoverId
-          ? { ...h, status: 'completed' }
+          ? {
+              ...h,
+              toEmployeeId: recipientId ?? h.toEmployeeId,
+              status: 'completed',
+            }
           : h
       )
     )
