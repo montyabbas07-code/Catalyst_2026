@@ -2,6 +2,7 @@
 
 import { Archive, CircleAlert, Clock3, UserRoundX } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
+import { ProjectAccess } from '@/components/project-access'
 import { cn } from '@/lib/utils'
 
 type ArchivedModel = {
@@ -10,6 +11,9 @@ type ArchivedModel = {
 	description: string
 	reason: 'unowned' | 'retired'
 	lastOwner: string | null
+	contactName: string
+	contactEmail: string
+	codebaseUrl: string
 	archivedAt: string
 }
 
@@ -20,6 +24,9 @@ const archivedModels: ArchivedModel[] = [
 		description: 'Early prototype using monthly relative strength across market sectors.',
 		reason: 'unowned',
 		lastOwner: null,
+		contactName: 'Maya Singh',
+		contactEmail: 'maya.singh@example.com',
+		codebaseUrl: 'https://github.com/portfolio-bakery/sector-rotation-v1',
 		archivedAt: '18 Aug 2026',
 	},
 	{
@@ -28,6 +35,9 @@ const archivedModels: ArchivedModel[] = [
 		description: 'Post-earnings announcement drift model with an incomplete data lineage.',
 		reason: 'unowned',
 		lastOwner: null,
+		contactName: 'Maya Singh',
+		contactEmail: 'maya.singh@example.com',
+		codebaseUrl: 'https://github.com/portfolio-bakery/earnings-drift',
 		archivedAt: '04 Aug 2026',
 	},
 	{
@@ -36,6 +46,9 @@ const archivedModels: ArchivedModel[] = [
 		description: 'Regime labels based on rates, inflation, and credit-spread inputs.',
 		reason: 'retired',
 		lastOwner: 'Alex Chen',
+		contactName: 'Alex Chen',
+		contactEmail: 'alex.chen@example.com',
+		codebaseUrl: 'https://github.com/portfolio-bakery/macro-regime-classifier',
 		archivedAt: '22 Jul 2026',
 	},
 	{
@@ -44,6 +57,9 @@ const archivedModels: ArchivedModel[] = [
 		description: 'A research branch retired after liquidity constraints invalidated the test results.',
 		reason: 'retired',
 		lastOwner: 'Daniel Kim',
+		contactName: 'Daniel Kim',
+		contactEmail: 'daniel.kim@example.com',
+		codebaseUrl: 'https://github.com/portfolio-bakery/small-cap-reversal',
 		archivedAt: '11 Jun 2026',
 	},
 ]
@@ -93,6 +109,12 @@ function ArchivedModelCard({ model }: { model: ArchivedModel }) {
 					<span className="font-medium text-foreground">{model.lastOwner ?? 'Unassigned'}</span>
 				</span>
 			</div>
+
+			<ProjectAccess
+				codebaseUrl={model.codebaseUrl}
+				owner={model.contactName}
+				ownerEmail={model.contactEmail}
+			/>
 
 		</article>
 	)

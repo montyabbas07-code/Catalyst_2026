@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowRightLeft, CircleCheck, ShieldCheck, LoaderCircle } from 'lucide-react'
+import { ArrowRightLeft, CircleCheck, ShieldCheck, LoaderCircle, Mail } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
 import { usePortfolio, type TeamMember } from '@/components/portfolio-store'
 import { cn } from '@/lib/utils'
@@ -43,6 +43,13 @@ function MemberCard({ member }: { member: TeamMember }) {
           <div>
             <h3 className="font-serif text-lg font-semibold text-foreground">{member.name}</h3>
             <p className="text-sm text-muted-foreground">{member.role}</p>
+            <a
+              href={`mailto:${member.email}`}
+              className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline"
+            >
+              <Mail className="size-3.5" aria-hidden />
+              {member.email}
+            </a>
           </div>
         </div>
         <span

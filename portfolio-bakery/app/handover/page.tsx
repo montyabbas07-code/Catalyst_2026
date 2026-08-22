@@ -17,6 +17,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { usePortfolio, type Project, type TeamMember } from '@/components/portfolio-store'
 import { useConsole } from '@/components/console-provider'
 import { cn } from '@/lib/utils'
+import { ProjectAccess } from '@/components/project-access'
 
 function QueueCard({
   project,
@@ -51,6 +52,11 @@ function QueueCard({
               Review recipe card
               <ArrowRight className="size-4" aria-hidden />
             </Link>
+            <ProjectAccess
+              codebaseUrl={project.codebaseUrl}
+              owner={project.owner}
+              ownerEmail={project.ownerEmail}
+            />
           </div>
         </div>
       </article>
@@ -128,6 +134,11 @@ function QueueCard({
           View Recipe
         </Link>
       </div>
+      <ProjectAccess
+        codebaseUrl={project.codebaseUrl}
+        owner={project.owner}
+        ownerEmail={project.ownerEmail}
+      />
     </article>
   )
 }

@@ -21,6 +21,7 @@ import { ReadinessBadge, StatusPill } from '@/components/status-badges'
 import { Button } from '@/components/ui/button'
 import { usePortfolio, type RecipeField } from '@/components/portfolio-store'
 import { cn } from '@/lib/utils'
+import { ProjectAccess } from '@/components/project-access'
 
 function FieldRow({
   field,
@@ -248,6 +249,12 @@ export default function RecipePage({ params }: { params: Promise<{ id: string }>
                 </div>
               </div>
             </div>
+
+            <ProjectAccess
+              codebaseUrl={project.codebaseUrl}
+              owner={project.owner}
+              ownerEmail={project.ownerEmail}
+            />
 
             {/* Hypothesis */}
             <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 p-4">

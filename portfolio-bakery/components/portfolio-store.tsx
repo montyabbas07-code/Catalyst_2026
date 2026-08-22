@@ -24,6 +24,8 @@ export type Project = {
   id: string
   name: string
   owner: string
+  ownerEmail: string
+  codebaseUrl: string
   sousChef: string | null
   status: string
   readiness: Readiness
@@ -35,6 +37,7 @@ export type Project = {
 export type TeamMember = {
   id: string
   name: string
+  email: string
   role: string
   initials: string
   availability: 'active' | 'transferred' | 'available'
@@ -51,6 +54,8 @@ const seedProjects: Project[] = [
     id: 'momentum-alpha',
     name: 'Momentum Alpha',
     owner: 'Alex Chen',
+    ownerEmail: 'alex.chen@example.com',
+    codebaseUrl: 'https://github.com/portfolio-bakery/momentum-alpha',
     sousChef: 'Sarah Patel',
     status: 'Active',
     readiness: 'needs-review',
@@ -118,6 +123,8 @@ const seedProjects: Project[] = [
     id: 'mean-reversion',
     name: 'Mean Reversion Strategy',
     owner: 'Alex Chen',
+    ownerEmail: 'alex.chen@example.com',
+    codebaseUrl: 'https://github.com/portfolio-bakery/mean-reversion',
     sousChef: 'Daniel Kim',
     status: 'Active',
     readiness: 'needs-review',
@@ -169,6 +176,8 @@ const seedProjects: Project[] = [
     id: 'overnight-gap',
     name: 'Overnight Gap Reversal',
     owner: 'Alex Chen',
+    ownerEmail: 'alex.chen@example.com',
+    codebaseUrl: 'https://github.com/portfolio-bakery/overnight-gap',
     sousChef: null,
     status: 'Active',
     readiness: 'incomplete',
@@ -187,6 +196,8 @@ const seedProjects: Project[] = [
     id: 'volatility-filter',
     name: 'Volatility Filter',
     owner: 'Sarah Patel',
+    ownerEmail: 'sarah.patel@example.com',
+    codebaseUrl: 'https://github.com/portfolio-bakery/volatility-filter',
     sousChef: 'Daniel Kim',
     status: 'Active',
     readiness: 'ready',
@@ -241,6 +252,8 @@ const seedProjects: Project[] = [
     id: 'liquidity-signal',
     name: 'Liquidity Signal',
     owner: 'Daniel Kim',
+    ownerEmail: 'daniel.kim@example.com',
+    codebaseUrl: 'https://github.com/portfolio-bakery/liquidity-signal',
     sousChef: 'Sarah Patel',
     status: 'Active',
     readiness: 'incomplete',
@@ -341,6 +354,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       {
         id: 'alex',
         name: 'Alex Chen',
+        email: 'alex.chen@example.com',
         role: 'Quant Researcher',
         initials: 'AC',
         availability: 'transferred',
@@ -350,6 +364,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       {
         id: 'sarah',
         name: 'Sarah Patel',
+        email: 'sarah.patel@example.com',
         role: 'Senior Quant Researcher',
         initials: 'SP',
         availability: 'available',
@@ -359,6 +374,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       {
         id: 'daniel',
         name: 'Daniel Kim',
+        email: 'daniel.kim@example.com',
         role: 'Quant Researcher',
         initials: 'DK',
         availability: 'active',

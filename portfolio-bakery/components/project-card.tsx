@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowRight, CircleCheck, CircleAlert } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { ReadinessBadge, StatusPill } from '@/components/status-badges'
+import { ProjectAccess } from '@/components/project-access'
 import type { Project } from '@/components/portfolio-store'
 import { cn } from '@/lib/utils'
 
@@ -44,6 +45,12 @@ export function ProjectCard({
           {missing === 0 ? 'No missing context' : `${missing} missing`}
         </span>
       </div>
+
+      <ProjectAccess
+        codebaseUrl={project.codebaseUrl}
+        owner={project.owner}
+        ownerEmail={project.ownerEmail}
+      />
 
       <div className="mt-auto pt-5 flex flex-col gap-2">
         <Link
